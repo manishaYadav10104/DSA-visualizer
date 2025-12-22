@@ -1,0 +1,57 @@
+.navbar {
+  height: 100px;
+  background-color: #070e20;
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+  font-family:Georgia, 'Times New Roman', Times, serif;
+  font-size: 1.6rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+#first {
+  font-size: 30px;
+  /* padding-top: 10px; */
+  /* margin-right: 5px; */
+  color: #38bdf8;
+}
+
+
+
+.nav-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.nav-btn {
+  background: transparent;
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+  background-color: #38bdf8;
+  color: #0f172a;
+}
+
+
+.icon {
+  /* font-size: 24px; */
+  padding-top: 3px;
+  margin-right: 8px;
+}

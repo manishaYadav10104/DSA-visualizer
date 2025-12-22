@@ -1,0 +1,116 @@
+/* Main Section Container */
+.main {
+  padding: 60px 40px;
+  background-color: #0f172a;
+  color: #e2e8f0;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Hero Section */
+.hero {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.hero h2 {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  color: #38bdf8;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto 24px;
+  line-height: 1.6;
+  color: #cbd5f5;
+}
+
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-buttons button {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  background-color: #38bdf8;
+  color: #0f172a;
+}
+
+.hero-buttons button:hover {
+  background-color: #0ea5e9;
+}
+
+.hero-buttons .secondary {
+  background-color: transparent;
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+}
+
+.hero-buttons .secondary:hover {
+  background-color: #38bdf8;
+  color: #0f172a;
+}
+
+/* Features Section */
+.features {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.features h3 {
+  font-size: 2rem;
+  margin-bottom: 32px;
+  color: #38bdf8;
+}
+
+/* Feature Card Grid */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+}
+
+/* Individual Card */
+.card {
+  background-color: #10213c;
+  border-radius: 12px;
+  padding: 24px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  text-align: center;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.25);
+}
+
+/* Card Icon */
+.card i {
+  font-size: 2.5rem;
+  color: #38bdf8;
+  margin-bottom: 12px;
+}
+
+/* Card Title */
+.card h4 {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+/* Card Description */
+.card p {
+  font-size: 0.95rem;
+  color: #cbd5f5;
+  line-height: 1.5;
+}
