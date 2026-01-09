@@ -1,0 +1,44 @@
+.visualization-panel {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+    padding: 10px;
+  }
+  
+  .array-container {
+    flex: 2;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    padding: 20px;
+    background: #020617;
+  }
+  
+  .array-bar {
+    flex: 1;
+    max-width: 14px;
+    background: #38bdf8;
+    transition: height 0.2s ease, background-color 0.2s ease;
+    border-radius: 2px;
+  }
+  
+  .array-bar.active {
+    background: #ef4444;
+  }
+  
+  .array-bar.sorted {
+    background: #22c55e;
+  }
+  
+  .code-panel {
+    flex: 1;
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 10px;
+    overflow-y: auto;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 13px;
+  }
+  
