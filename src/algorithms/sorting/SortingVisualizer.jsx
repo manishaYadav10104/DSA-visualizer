@@ -20,7 +20,7 @@ const ALGORITHMS = {
       }
     }
   }
-}`,
+}`
   },
   "Selection Sort": {
     func: SelectionSort,
@@ -32,7 +32,7 @@ const ALGORITHMS = {
     }
     [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
   }
-}`,
+}`
   },
   "Insertion Sort": {
     func: InsertionSort,
@@ -46,7 +46,7 @@ const ALGORITHMS = {
     }
     arr[j+1] = key;
   }
-}`,
+}`
   },
   "Merge Sort": {
     func: MergeSort,
@@ -56,119 +56,107 @@ const ALGORITHMS = {
   const left = mergeSort(arr.slice(0, mid));
   const right = mergeSort(arr.slice(mid));
   return merge(left, right);
-}`,
+}
+
+function merge(left, right) {
+  const result = [];
+  while (left.length && right.length) {
+    if (left[0] <= right[0]) result.push(left.shift());
+    else result.push(right.shift());
+  }
+  return result.concat(left).concat(right);
+}`
   },
   "Quick Sort": {
     func: QuickSort,
-    code: `function quickSort(arr, low=0, high=arr.length-1) {
+    code: `function quickSort(arr, low = 0, high = arr.length - 1) {
   if (low < high) {
     const pi = partition(arr, low, high);
-    quickSort(arr, low, pi-1);
-    quickSort(arr, pi+1, high);
+    quickSort(arr, low, pi - 1);
+    quickSort(arr, pi + 1, high);
   }
-}`,
-  },
+}
+
+function partition(arr, low, high) {
+  const pivot = arr[high];
+  let i = low - 1;
+  for (let j = low; j < high; j++) {
+    if (arr[j] <= pivot) {
+      i++;
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+  [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+  return i + 1;
+}`
+  }
 };
+
+
 
 export default function SortingVisualizer({ goBack }) {
   const [array, setArray] = useState([]);
-  const [arraySize, setArraySize] = useState(30);
+  const [arraySize, setArraySize] = useState(20);
   const [selectedAlgo, setSelectedAlgo] = useState("Bubble Sort");
   const [speed, setSpeed] = useState(60);
   const [isSorting, setIsSorting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [activeBars, setActiveBars] = useState([]);
   const [sortedIndices, setSortedIndices] = useState([]);
-  const [comparisons, setComparisons] = useState(0);
-  const [swaps, setSwaps] = useState(0);
-  const [isStepMode, setIsStepMode] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [animations, setAnimations] = useState([]);
 
-  useEffect(() => {
-    generateArray();
-  }, [arraySize]);
+  useEffect(() => generateArray(), [arraySize]);
 
   const generateArray = () => {
     if (isSorting) return;
-    setComparisons(0);
-    setSwaps(0);
-    setSortedIndices([]);
     const arr = Array.from({ length: arraySize }, () =>
       Math.floor(Math.random() * 300) + 20
     );
     setArray(arr);
     setAnimations([]);
     setCurrentStepIndex(0);
+    setSortedIndices([]);
   };
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
-
-  const waitUntilResume = async () => {
-    while (isPaused) await sleep(50);
-  };
+  const waitUntilResume = async () => { while (isPaused) await sleep(50); };
 
   const startSorting = async (stepMode = false) => {
     if (isSorting) return;
     setIsSorting(true);
-    setIsStepMode(stepMode);
 
     let arr = [...array];
-    let anims = animations;
-
-    if (anims.length === 0) {
-      anims = ALGORITHMS[selectedAlgo].func.getAnimations(array);
-      setAnimations(anims);
-    }
+    let anims = animations.length ? animations : ALGORITHMS[selectedAlgo].func.getAnimations(array);
+    setAnimations(anims);
 
     for (let i = currentStepIndex; i < anims.length; i++) {
       setCurrentStepIndex(i);
-
       const step = anims[i];
-
       await waitUntilResume();
 
-      if (step.type === "compare") {
-        setActiveBars(step.indices);
-        setComparisons((prev) => prev + 1);
-      }
-
+      if (step.type === "compare") setActiveBars(step.indices);
       if (step.type === "swap") {
         const [x, y] = step.indices;
         arr[x] = step.values[0];
         arr[y] = step.values[1];
         setArray([...arr]);
-        setSwaps((prev) => prev + 1);
       }
-
       if (step.type === "overwrite") {
         arr[step.index] = step.value;
         setArray([...arr]);
-        setSwaps((prev) => prev + 1);
       }
-
-      if (step.type === "sorted") {
-        setSortedIndices((prev) => [...prev, step.index]);
-      }
+      if (step.type === "sorted") setSortedIndices(prev => [...prev, step.index]);
 
       await sleep(speed);
-
-      if (stepMode) {
-        setIsSorting(false);
-        return;
-      }
+      if (stepMode) { setIsSorting(false); return; }
     }
 
     setSortedIndices(array.map((_, i) => i));
     setActiveBars([]);
     setIsSorting(false);
-    setIsStepMode(false);
     setCurrentStepIndex(0);
     setAnimations([]);
-  };
-
-  const nextStep = () => {
-    startSorting(true);
   };
 
   return (
@@ -181,79 +169,41 @@ export default function SortingVisualizer({ goBack }) {
           onChange={(e) => setSelectedAlgo(e.target.value)}
           disabled={isSorting}
         >
-          {Object.keys(ALGORITHMS).map((algo) => (
-            <option key={algo}>{algo}</option>
-          ))}
+          {Object.keys(ALGORITHMS).map((algo) => <option key={algo}>{algo}</option>)}
         </select>
 
-        <button onClick={generateArray} disabled={isSorting}>
-          Generate Array
-        </button>
-
-        <button
-          className="sort-btn"
-          onClick={() => startSorting()}
-          disabled={isSorting}
-        >
-          Sort
-        </button>
-
+        <button onClick={generateArray} disabled={isSorting}>Generate Array</button>
+        <button onClick={() => startSorting()} disabled={isSorting}>Sort</button>
         <button onClick={() => setIsPaused(!isPaused)} disabled={!isSorting}>
           {isPaused ? "Resume" : "Pause"}
         </button>
 
-        <button onClick={nextStep} disabled={isSorting && !isPaused}>
-          Next Step
-        </button>
-
         <div className="speed-control">
           <span>Speed</span>
-          <input
-            type="range"
-            min="10"
-            max="200"
-            value={speed}
-            onChange={(e) => setSpeed(Number(e.target.value))}
-            disabled={isSorting}
-          />
+          <input type="range" min="10" max="200" value={speed} onChange={(e) => setSpeed(Number(e.target.value))} disabled={isSorting} />
         </div>
 
         <div className="speed-control">
           <span>Size</span>
-          <input
-            type="range"
-            min="10"
-            max="80"
-            value={arraySize}
-            onChange={(e) => setArraySize(Number(e.target.value))}
-            disabled={isSorting}
-          />
-        </div>
-
-        <div className="counters">
-          <span>Comparisons: {comparisons}</span>
-          <span>Swaps: {swaps}</span>
+          <input type="range" min="10" max="40" value={arraySize} onChange={(e) => setArraySize(Number(e.target.value))} disabled={isSorting} />
         </div>
       </div>
 
-      <div className="visualization-panel" style={{display: 'flex', gap: '12px'}}>
-        <div className="array-container" style={{flex: 3}}>
+      <div className="visualization-panel">
+        <div className="array-container">
           {array.map((value, idx) => (
             <div
               key={idx}
-              className={`array-bar ${
-                activeBars.includes(idx)
-                  ? "active"
-                  : sortedIndices.includes(idx)
-                  ? "sorted"
-                  : ""
-              }`}
+              className={`array-bar ${activeBars.includes(idx) ? "active" : sortedIndices.includes(idx) ? "sorted" : ""}`}
               style={{ height: `${value}px` }}
-            />
+            >
+              <span className="bar-number">{value}</span>
+              <span className="bar-tooltip">{value}</span>
+            </div>
           ))}
         </div>
 
-        <div className="code-panel" style={{flex: 2, backgroundColor: "#0f172a", color: "#cbd5e1", padding: "12px", borderRadius: "6px", fontFamily: "monospace", whiteSpace: "pre-wrap", overflowY: "auto", maxHeight: "500px"}}>
+        <div className="code-panel">
           <pre>{ALGORITHMS[selectedAlgo].code}</pre>
         </div>
       </div>
