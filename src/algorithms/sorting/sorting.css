@@ -1,150 +1,93 @@
+body {
+  margin: 0;
+  background: #1e2a3b;
+  font-family: Arial, sans-serif;
+}
+
 .sorting-page {
   padding: 20px;
-  font-family: "Poppins", sans-serif;
-  background: #1e293b;
-  color: #f1f5f9;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  color: #fff;
 }
 
 .sorting-toolbar {
   display: flex;
-  flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 20px;
   align-items: center;
+  margin-bottom: 20px;
 }
 
 .sorting-toolbar button,
 .sorting-toolbar select {
   background: #3b82f6;
-  color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
+  padding: 6px 12px;
+  color: white;
+  border-radius: 6px;
   cursor: pointer;
-  transition: 0.2s;
 }
 
-.sorting-toolbar button:hover:not(:disabled) {
-  background: #2563eb;
-}
-
-.sorting-toolbar button:disabled,
-.sorting-toolbar select:disabled {
-  background: #94a3b8;
-  cursor: not-allowed;
-}
-
-.speed-control {
+.range {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.speed-control input[type="range"] {
-  cursor: pointer;
-}
-
-.visualization-panel {
+.main-layout {
   display: flex;
   gap: 20px;
-  width: 100%;
-  max-width: 1200px;
 }
 
-.array-container {
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  gap: 2px;
-  background: #0f172a;
-  padding: 10px;
-  border-radius: 8px;
+.visualizer-box {
   flex: 3;
-  height: 400px;
-  overflow-x: auto;
-}
-
-.array-bar {
-  width: 20px;
+  background: #0f172a;
+  padding: 20px;
+  border-radius: 10px;
   display: flex;
-  justify-content: center;
   align-items: flex-end;
-  position: relative;
-  border-radius: 3px 3px 0 0;
-  cursor: pointer;
-  transition: all 0.2s;
+  gap: 5px;
+  height: 380px;
+}
+
+.bar {
   background: #3b82f6;
+  width: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  transition: height 0.2s;
 }
 
-.array-bar.active {
-  background: #f87171;
-}
-
-.array-bar.sorted {
-  background: #34d399;
-}
-
-.bar-number {
+.bar span {
   font-size: 10px;
-  color: #f1f5f9;
-  position: absolute;
-  top: -16px;
-  pointer-events: none;
 }
 
-.bar-tooltip {
-  visibility: hidden;
-  width: max-content;
-  background: #111827;
-  color: #f1f5f9;
-  text-align: center;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  position: absolute;
-  top: -28px;
-  z-index: 10;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: 0.2s;
+.bar.active {
+  background: #ef4444;
 }
 
-.array-bar:hover .bar-tooltip {
-  visibility: visible;
-  opacity: 1;
+.bar.sorted {
+  background: #22c55e;
 }
 
-.code-panel {
-  flex: 2;
-  background: #0f172a;
-  color: #cbd5e1;
-  padding: 12px;
-  border-radius: 6px;
-  font-family: monospace;
+.info-box {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.card {
+  background: #020617;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.card pre {
   white-space: pre-wrap;
-  overflow-y: auto;
-  max-height: 500px;
+  font-size: 13px;
 }
 
-/* Scrollbars */
-.array-container::-webkit-scrollbar,
-.code-panel::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.array-container::-webkit-scrollbar-thumb,
-.code-panel::-webkit-scrollbar-thumb {
-  background: #3b82f6;
-  border-radius: 4px;
-}
-
-.array-container::-webkit-scrollbar-track,
-.code-panel::-webkit-scrollbar-track {
-  background: #0f172a;
+.card.code {
+  color: #22c55e;
 }
