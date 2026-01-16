@@ -1,27 +1,16 @@
 {
   "name": "visu-algo",
   "version": "1.0.0",
-  "description": "",
-  "homepage": "https://github.com/manishaYadav10104/DSA-visualizer#readme",
-  "bugs": {
-    "url": "https://github.com/manishaYadav10104/DSA-visualizer/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/manishaYadav10104/DSA-visualizer.git"
-  },
-  "license": "ISC",
-  "type": "commonjs",
   "scripts": {
-    "start": "parcel index.html",
-    "build": "parcel build index.html"
+    "start": "parcel src/index.html --no-cache",
+    "build": "parcel build src/index.html"
   },
   "dependencies": {
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "react-icons": "^5.5.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "parcel": "^2.16.3"
+    "parcel": "^2.9.3",
+    "process": "^0.11.10"
   }
 }

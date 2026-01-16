@@ -1,26 +1,37 @@
-const BubbleSort = {
-    getAnimations(arr) {
-      const animations = [];
-      const aux = arr.slice();
-      const n = aux.length;
+import { delay, highlightBars } from "./BaseSort";
+
+export const bubbleSort = async (array, setArray, speed) => {
+  const arr = [...array];
+  const n = arr.length;
   
-      for (let i = 0; i < n; i++) {
-        // After each pass, last i elements are sorted
-        for (let j = 0; j < n - i - 1; j++) {
-          animations.push({ type: "compare", indices: [j, j + 1] });
-          if (aux[j] > aux[j + 1]) {
-            // Swap animation with new values
-            animations.push({ type: "swap", indices: [j, j + 1], values: [aux[j + 1], aux[j]] });
-            [aux[j], aux[j + 1]] = [aux[j + 1], aux[j]];
-          }
-        }
-        // Mark the last element in this pass as sorted
-        animations.push({ type: "sorted", index: n - i - 1 });
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = 0; j < n - i - 1; j++) {
+      // Highlight comparing bars
+      highlightBars([j, j + 1], "#ff6b6b");
+      await delay(150 - speed);
+      
+      if (arr[j] > arr[j + 1]) {
+        // Highlight swapping
+        highlightBars([j, j + 1], "#4ecdc4");
+        
+        // Swap
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        setArray([...arr]);
+        
+        await delay(150 - speed);
       }
-  
-      return animations;
+      
+      // Reset colors
+      highlightBars([j, j + 1], "#3498db");
     }
-  };
+    // Mark sorted element
+    highlightBars([n - i - 1], "#2ecc71");
+  }
   
-  export default BubbleSort;
+  // Mark all as sorted
+  for (let i = 0; i < n; i++) {
+    highlightBars([i], "#2ecc71");
+  }
   
+  return arr;
+};

@@ -1,28 +1,27 @@
 import React, { useState } from "react";
+import { ThemeProvider } from "./context/ThemeContext";
 import Navbar from "./components/Navbar";
+import Header from "./components/Header";
 import MainSection from "./components/MainSection";
+import Footer from "./components/Footer";
 import SortingVisualizer from "./algorithms/sorting/SortingVisualizer";
 
 function App() {
   const [selectedFeature, setSelectedFeature] = useState(null);
 
   return (
-    <>
-      {/* Show Navbar ONLY on home page */}
-      {!selectedFeature && <Navbar />}
-
-      {!selectedFeature ? (
-        <MainSection setSelectedFeature={setSelectedFeature} />
-      ) : selectedFeature === "Sorting Algorithms" ? (
+    <ThemeProvider>
+      {selectedFeature === "sorting" ? (
         <SortingVisualizer goBack={() => setSelectedFeature(null)} />
       ) : (
-        <div style={{ padding: "40px", color: "white" }}>
-          <button onClick={() => setSelectedFeature(null)}>← Back</button>
-          <h2>{selectedFeature}</h2>
-          <p>Page coming soon...</p>
-        </div>
+        <>
+          <Navbar />
+          <Header setSelectedFeature={setSelectedFeature} />
+          <MainSection setSelectedFeature={setSelectedFeature} />
+          <Footer />
+        </>
       )}
-    </>
+    </ThemeProvider>
   );
 }
 
