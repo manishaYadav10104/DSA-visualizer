@@ -1,23 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import "../styles/card.css";
 
 const FeatureCard = ({ title, description, icon, color, onClick }) => {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleClick = async (e) => {
-    e.preventDefault();
-    if (typeof onClick === 'function' && !isLoading) {
-      setIsLoading(true);
-      try {
-        await onClick();
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
   return (
-    <div className="feature-card" onClick={handleClick}>
+    <div className="feature-card" onClick={onClick}>
       <div className="card-content">
         <div className="card-icon" style={{ backgroundColor: color }}>
           {icon}
@@ -27,14 +13,14 @@ const FeatureCard = ({ title, description, icon, color, onClick }) => {
         <button 
           className="card-button"
           style={{ backgroundColor: color }}
-          onClick={handleClick}
-          disabled={isLoading}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (typeof onClick === 'function') {
+              onClick();
+            }
+          }}
         >
-          {isLoading ? (
-            <span className="loading">Loading...</span>
-          ) : (
-            "Explore →"
-          )}
+          Explore →
         </button>
       </div>
     </div>

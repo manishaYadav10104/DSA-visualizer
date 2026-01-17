@@ -363,3 +363,258 @@
     gap: 15px;
   }
 }
+
+
+/* Add to existing sorting.css file */
+
+.pause-btn {
+  background: linear-gradient(45deg, #ffd166, #ff9e00);
+  color: white;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  min-width: 150px;
+}
+
+.pause-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.pause-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pause-btn.resume {
+  background: linear-gradient(45deg, #4facfe, #00f2fe);
+}
+
+@media (max-width: 768px) {
+  .pause-btn {
+    width: 100%;
+  }
+}
+
+
+
+/* Add to existing sorting.css file */
+
+/* Input Section Styles */
+.input-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 25px;
+}
+
+.app.light-theme .input-section {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #4ecdc4;
+}
+
+.input-with-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.custom-input {
+  flex: 1;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.app.light-theme .custom-input {
+  background: white;
+  color: #333;
+  border-color: #ddd;
+}
+
+.app.dark-theme .custom-input {
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.custom-input:focus {
+  outline: none;
+  border-color: #4ecdc4;
+}
+
+.custom-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.generate-random-btn,
+.apply-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.generate-random-btn {
+  background: linear-gradient(45deg, #a29bfe, #6c5ce7);
+  color: white;
+}
+
+.apply-btn {
+  background: linear-gradient(45deg, #00b894, #00cec9);
+  color: white;
+}
+
+.generate-random-btn:hover:not(:disabled),
+.apply-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.generate-random-btn:disabled,
+.apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input-error {
+  color: #ff7675;
+  font-size: 14px;
+  margin-top: 5px;
+  padding: 5px 10px;
+  background: rgba(255, 118, 117, 0.1);
+  border-radius: 5px;
+  border-left: 3px solid #ff7675;
+}
+
+.input-hint {
+  color: #b0b0b0;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.app.light-theme .input-hint {
+  color: #666;
+}
+
+/* Stop Button Styles */
+.stop-btn {
+  background: linear-gradient(45deg, #ff7675, #d63031);
+  color: white;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  min-width: 150px;
+}
+
+.stop-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.stop-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Pause Button Update */
+.pause-btn {
+  background: linear-gradient(45deg, #ffd166, #ff9e00);
+  color: white;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  min-width: 150px;
+}
+
+.pause-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.pause-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pause-btn.resume-state {
+  background: linear-gradient(45deg, #4facfe, #00f2fe);
+}
+
+/* Control Buttons Layout */
+.control-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+  .input-with-buttons {
+    flex-direction: column;
+  }
+  
+  .control-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .generate-random-btn,
+  .apply-btn,
+  .generate-btn,
+  .sort-btn,
+  .pause-btn,
+  .stop-btn {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .legend {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+}
+
+/* Array value display enhancement */
+.bar-value {
+  position: absolute;
+  bottom: -25px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2px 4px;
+  border-radius: 3px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.app.dark-theme .bar-value {
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+}

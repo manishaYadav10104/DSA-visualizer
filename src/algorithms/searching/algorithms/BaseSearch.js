@@ -25,7 +25,7 @@ export const setStopState = (stopped) => {
 };
 
 // Reset all states
-export const resetSortingState = () => {
+export const resetSearchingState = () => {
   isPaused = false;
   isStopped = false;
   resumeResolve = null;
@@ -34,7 +34,7 @@ export const resetSortingState = () => {
 // Check if stopped
 export const checkStop = () => {
   if (isStopped) {
-    throw new Error("Sorting stopped by user");
+    throw new Error("Searching stopped by user");
   }
 };
 
@@ -67,14 +67,29 @@ export const highlightBars = (indices, color) => {
   });
 };
 
-// Swap with pause and stop support
-export const swap = async (array, setArray, i, j, speed) => {
-  await checkPause();
-  const newArray = [...array];
-  [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  setArray([...newArray]);
-  await delay(100 - speed);
-  return newArray;
+// Reset all bars to default color
+export const resetBarColors = (size, color = "#3498db") => {
+  for (let i = 0; i < size; i++) {
+    const bar = document.getElementById(`bar-${i}`);
+    if (bar) bar.style.backgroundColor = color;
+  }
+};
+
+// Mark target bar
+export const markTargetBar = (index, found) => {
+  const bar = document.getElementById(`bar-${index}`);
+  if (bar) {
+    bar.style.backgroundColor = found ? "#2ecc71" : "#e74c3c";
+    bar.classList.add("target-bar");
+  }
+};
+
+// Mark comparing bars
+export const markComparingBars = (indices) => {
+  indices.forEach(idx => {
+    const bar = document.getElementById(`bar-${idx}`);
+    if (bar) bar.style.backgroundColor = "#ff6b6b";
+  });
 };
 
 // Get current stop state

@@ -2,8 +2,14 @@ import React from "react";
 import { useTheme } from "../context/ThemeContext";
 import "../styles/footer.css";
 
-const Footer = () => {
+const Footer = ({ setSelectedFeature }) => {
   const { isDarkMode } = useTheme();
+
+  const handleNavigation = (feature) => {
+    if (setSelectedFeature) {
+      setSelectedFeature(feature);
+    }
+  };
 
   return (
     <footer className="footer">
@@ -16,24 +22,24 @@ const Footer = () => {
           <div className="footer-links">
             <div className="footer-section">
               <h4>Algorithms</h4>
-              <a href="#">Sorting</a>
-              <a href="#">Searching</a>
-              <a href="#">Graph</a>
-              <a href="#">Trees</a>
+              <button onClick={() => handleNavigation("sorting")}>Sorting</button>
+              <button onClick={() => handleNavigation("searching")}>Searching</button>
+              <button>Graph</button>
+              <button>Trees</button>
             </div>
             <div className="footer-section">
               <h4>Resources</h4>
-              <a href="#">Documentation</a>
-              <a href="#">Tutorials</a>
-              <a href="#">Examples</a>
-              <a href="#">Blog</a>
+              <button>Documentation</button>
+              <button>Tutorials</button>
+              <button>Examples</button>
+              <button>Blog</button>
             </div>
             <div className="footer-section">
               <h4>Connect</h4>
-              <a href="#">GitHub</a>
-              <a href="#">Twitter</a>
-              <a href="#">LinkedIn</a>
-              <a href="#">Contact</a>
+              <button>GitHub</button>
+              <button>Twitter</button>
+              <button>LinkedIn</button>
+              <button>Contact</button>
             </div>
           </div>
         </div>

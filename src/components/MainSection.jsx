@@ -11,6 +11,7 @@ const MainSection = ({ setSelectedFeature }) => {
       id: 1,
       title: "Sorting Algorithms",
       description: "Bubble, Selection, Insertion, Merge, Quick & more.",
+      category: "sorting",
       icon: "📊",
       color: "#FF6B6B"
     },
@@ -18,6 +19,7 @@ const MainSection = ({ setSelectedFeature }) => {
       id: 2,
       title: "Searching Algorithms",
       description: "Linear Search, Binary Search, Jump Search and more.",
+      category: "searching",
       icon: "🔍",
       color: "#4ECDC4"
     },
@@ -25,6 +27,7 @@ const MainSection = ({ setSelectedFeature }) => {
       id: 3,
       title: "Graph Algorithms",
       description: "BFS, DFS, Dijkstra, Minimum Spanning Tree.",
+      category: "graph",
       icon: "📈",
       color: "#45B7D1"
     },
@@ -32,6 +35,7 @@ const MainSection = ({ setSelectedFeature }) => {
       id: 4,
       title: "Tree Algorithms",
       description: "Binary Tree, BST, AVL, Heap visualizations.",
+      category: "trees",
       icon: "🌳",
       color: "#96CEB4"
     },
@@ -39,6 +43,7 @@ const MainSection = ({ setSelectedFeature }) => {
       id: 5,
       title: "Stack Operations",
       description: "Learn push, pop and stack operations visually.",
+      category: "stack",
       icon: "📚",
       color: "#FFEAA7"
     },
@@ -46,17 +51,15 @@ const MainSection = ({ setSelectedFeature }) => {
       id: 6,
       title: "Queue Operations",
       description: "Understand enqueue and dequeue operations step by step.",
+      category: "queue",
       icon: "📥",
       color: "#DDA0DD"
     }
   ];
 
-  const handleCardClick = (featureId) => {
+  const handleCardClick = (featureCategory) => {
     if (typeof setSelectedFeature === 'function') {
-      if (featureId === 1) {
-        setSelectedFeature("sorting");
-      }
-      // Add more conditions for other features when you implement them
+      setSelectedFeature(featureCategory);
     }
   };
 
@@ -76,7 +79,7 @@ const MainSection = ({ setSelectedFeature }) => {
               description={feature.description}
               icon={feature.icon}
               color={feature.color}
-              onClick={() => handleCardClick(feature.id)}
+              onClick={() => handleCardClick(feature.category)}
             />
           ))}
         </div>

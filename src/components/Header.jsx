@@ -21,7 +21,12 @@ const Header = ({ setSelectedFeature }) => {
           >
             Start Learning
           </button>
-          <button className="btn btn-secondary">Explore Algorithms</button>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => setSelectedFeature && setSelectedFeature("searching")}
+          >
+            Explore Algorithms
+          </button>
         </div>
       </div>
     </header>

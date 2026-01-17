@@ -125,3 +125,40 @@
     justify-content: center;
   }
 }
+
+
+/* Update button styles in nav-links */
+.nav-links button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Make sure nav-link buttons have same styles as anchor tags */
+.nav-links .nav-link {
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+/* Footer button styles */
+.footer-section button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.footer-section button:hover {
+  color: #ff6b6b;
+}

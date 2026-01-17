@@ -5,6 +5,7 @@ import { selectionSort } from "./algorithms/SelectionSort";
 import { insertionSort } from "./algorithms/InsertionSort";
 import { mergeSort } from "./algorithms/MergeSort";
 import { quickSort } from "./algorithms/QuickSort";
+import { setPauseState, setStopState, resetSortingState } from "./algorithms/BaseSort";
 import "./sorting.css";
 
 const SortingVisualizer = ({ goBack }) => {
@@ -15,9 +16,15 @@ const SortingVisualizer = ({ goBack }) => {
   const [algorithm, setAlgorithm] = useState("bubble");
   const [isSorting, setIsSorting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [customInput, setCustomInput] = useState("");
+  const [inputError, setInputError] = useState("");
 
   useEffect(() => {
     generateArray();
+    return () => {
+      // Cleanup on unmount
+      resetSortingState();
+    };
   }, [size]);
 
   const generateArray = () => {
@@ -27,6 +34,7 @@ const SortingVisualizer = ({ goBack }) => {
     }
     setArray([...newArray]);
     resetBarColors();
+    setInputError("");
   };
 
   const resetBarColors = () => {
@@ -36,11 +44,57 @@ const SortingVisualizer = ({ goBack }) => {
     }
   };
 
+  const handleCustomInput = () => {
+    if (isSorting) {
+      setInputError("Cannot change array while sorting");
+      return;
+    }
+
+    if (!customInput.trim()) {
+      setInputError("Please enter comma-separated numbers");
+      return;
+    }
+
+    try {
+      const numbers = customInput
+        .split(",")
+        .map(num => parseInt(num.trim()))
+        .filter(num => !isNaN(num) && num >= 1 && num <= 1000);
+
+      if (numbers.length === 0) {
+        setInputError("Please enter valid numbers (1-1000)");
+        return;
+      }
+
+      if (numbers.length > 100) {
+        setInputError("Maximum 100 numbers allowed");
+        return;
+      }
+
+      setArray([...numbers]);
+      setSize(numbers.length);
+      resetBarColors();
+      setInputError("");
+    } catch (error) {
+      setInputError("Invalid input format. Use: 10, 25, 50, 100");
+    }
+  };
+
+  const generateRandomInput = () => {
+    const randomNumbers = [];
+    const count = Math.min(20, size); // Generate up to 20 random numbers
+    for (let i = 0; i < count; i++) {
+      randomNumbers.push(Math.floor(Math.random() * 500) + 10);
+    }
+    setCustomInput(randomNumbers.join(", "));
+  };
+
   const startSorting = async () => {
     if (isSorting) return;
     
     setIsSorting(true);
     setIsPaused(false);
+    resetSortingState();
     resetBarColors();
     
     try {
@@ -64,15 +118,32 @@ const SortingVisualizer = ({ goBack }) => {
           await bubbleSort(array, setArray, speed);
       }
     } catch (error) {
-      console.error("Sorting error:", error);
+      if (error.message === "Sorting stopped by user") {
+        console.log("Sorting stopped");
+      } else {
+        console.error("Sorting error:", error);
+      }
     } finally {
       setIsSorting(false);
       setIsPaused(false);
     }
   };
 
-  const pauseSorting = () => {
-    setIsPaused(!isPaused);
+  const togglePause = () => {
+    const newPausedState = !isPaused;
+    setIsPaused(newPausedState);
+    setPauseState(newPausedState);
+  };
+
+  const stopSorting = () => {
+    if (isSorting) {
+      setIsSorting(false);
+      setIsPaused(false);
+      setStopState(true);
+      setTimeout(() => {
+        resetSortingState();
+      }, 100);
+    }
   };
 
   const algorithmInfo = {
@@ -150,6 +221,41 @@ const SortingVisualizer = ({ goBack }) => {
         </div>
       </div>
 
+      {/* Custom Input Section */}
+      <div className="input-section">
+        <div className="input-group">
+          <label>Custom Array Input:</label>
+          <div className="input-with-buttons">
+            <input
+              type="text"
+              placeholder="Enter comma-separated numbers (e.g., 50, 25, 75, 10, 100)"
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              disabled={isSorting}
+              className="custom-input"
+            />
+            <button 
+              className="generate-random-btn"
+              onClick={generateRandomInput}
+              disabled={isSorting}
+            >
+              Random
+            </button>
+            <button 
+              className="apply-btn"
+              onClick={handleCustomInput}
+              disabled={isSorting}
+            >
+              Apply
+            </button>
+          </div>
+          {inputError && <div className="input-error">{inputError}</div>}
+          <div className="input-hint">
+            Enter numbers separated by commas (1-1000), max 100 numbers
+          </div>
+        </div>
+      </div>
+
       <div className="controls-panel">
         <div className="control-group">
           <label>Algorithm</label>
@@ -170,7 +276,7 @@ const SortingVisualizer = ({ goBack }) => {
           <label>Array Size: {size}</label>
           <input
             type="range"
-            min="10"
+            min="5"
             max="100"
             value={size}
             onChange={(e) => setSize(parseInt(e.target.value))}
@@ -196,7 +302,7 @@ const SortingVisualizer = ({ goBack }) => {
             onClick={generateArray}
             disabled={isSorting}
           >
-            Generate New Array
+            Random Array
           </button>
           <button 
             className="sort-btn" 
@@ -207,20 +313,17 @@ const SortingVisualizer = ({ goBack }) => {
           </button>
           <button 
             className="pause-btn"
-            onClick={pauseSorting}
+            onClick={togglePause}
             disabled={!isSorting}
-            style={{
-              background: "linear-gradient(45deg, #4facfe, #00f2fe)",
-              padding: "14px 28px",
-              border: "none",
-              borderRadius: "15px",
-              color: "white",
-              fontWeight: "bold",
-              cursor: "pointer",
-              minWidth: "150px"
-            }}
           >
-            {isPaused ? "Resume" : "Pause"}
+            {isPaused ? "▶ Resume" : "⏸ Pause"}
+          </button>
+          <button 
+            className="stop-btn"
+            onClick={stopSorting}
+            disabled={!isSorting}
+          >
+            ⏹ Stop
           </button>
         </div>
       </div>
@@ -264,10 +367,6 @@ const SortingVisualizer = ({ goBack }) => {
         <div className="legend-item">
           <div className="legend-color" style={{ backgroundColor: "#feca57" }}></div>
           <span>Pivot/Min</span>
-        </div>
-        <div className="legend-item">
-          <div className="legend-color" style={{ backgroundColor: "#ff9ff3" }}></div>
-          <span>Insert/Merge</span>
         </div>
       </div>
 
