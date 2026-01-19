@@ -34,6 +34,7 @@
 }
 
 .nav-links {
+  /* font-size: large; */
   display: flex;
   gap: 2rem;
   align-items: center;
@@ -41,6 +42,7 @@
 
 .nav-link {
   text-decoration: none;
+  /* font-size: large; */
   font-weight: 500;
   padding: 0.5rem 1rem;
   border-radius: 20px;

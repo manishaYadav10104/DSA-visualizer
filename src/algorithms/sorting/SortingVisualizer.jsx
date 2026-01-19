@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { bubbleSort } from "./algorithms/BubbleSort";
 import { selectionSort } from "./algorithms/SelectionSort";
@@ -18,12 +18,21 @@ const SortingVisualizer = ({ goBack }) => {
   const [isPaused, setIsPaused] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [inputError, setInputError] = useState("");
+  const [currentStep, setCurrentStep] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(0);
+  const [progressPercentage, setProgressPercentage] = useState(0);
+  
+  // Refs for tracking
+  const stepCounterRef = useRef(0);
+  const progressIntervalRef = useRef(null);
 
   useEffect(() => {
     generateArray();
     return () => {
-      // Cleanup on unmount
       resetSortingState();
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     };
   }, [size]);
 
@@ -35,6 +44,10 @@ const SortingVisualizer = ({ goBack }) => {
     setArray([...newArray]);
     resetBarColors();
     setInputError("");
+    setCurrentStep(0);
+    setTotalSteps(0);
+    setProgressPercentage(0);
+    stepCounterRef.current = 0;
   };
 
   const resetBarColors = () => {
@@ -66,8 +79,8 @@ const SortingVisualizer = ({ goBack }) => {
         return;
       }
 
-      if (numbers.length > 100) {
-        setInputError("Maximum 100 numbers allowed");
+      if (numbers.length > 30) {
+        setInputError("Maximum 30 numbers allowed");
         return;
       }
 
@@ -75,6 +88,10 @@ const SortingVisualizer = ({ goBack }) => {
       setSize(numbers.length);
       resetBarColors();
       setInputError("");
+      setCurrentStep(0);
+      setTotalSteps(0);
+      setProgressPercentage(0);
+      stepCounterRef.current = 0;
     } catch (error) {
       setInputError("Invalid input format. Use: 10, 25, 50, 100");
     }
@@ -82,11 +99,60 @@ const SortingVisualizer = ({ goBack }) => {
 
   const generateRandomInput = () => {
     const randomNumbers = [];
-    const count = Math.min(20, size); // Generate up to 20 random numbers
+    const count = Math.min(20, size);
     for (let i = 0; i < count; i++) {
       randomNumbers.push(Math.floor(Math.random() * 500) + 10);
     }
     setCustomInput(randomNumbers.join(", "));
+  };
+
+  // Calculate total steps based on algorithm
+  const calculateTotalSteps = (algo, arrSize) => {
+    const n = arrSize || size;
+    switch(algo) {
+      case "bubble":
+        return Math.max(1, Math.floor((n * (n - 1)) / 2));
+      case "selection":
+        return Math.max(1, Math.floor((n * (n - 1)) / 2));
+      case "insertion":
+        return Math.max(1, Math.floor((n * (n - 1)) / 2));
+      case "merge":
+        return Math.max(1, Math.floor(n * Math.log2(n)) * 3);
+      case "quick":
+        return Math.max(1, Math.floor(n * Math.log2(n)) * 2);
+      default:
+        return Math.max(1, Math.floor((n * (n - 1)) / 2));
+    }
+  };
+
+  // Start progress simulation
+  const startProgressSimulation = (totalSteps) => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    
+    stepCounterRef.current = 0;
+    setCurrentStep(0);
+    
+    progressIntervalRef.current = setInterval(() => {
+      if (isSorting && !isPaused) {
+        // Increment step based on algorithm speed
+        let increment = 1;
+        if (algorithm === "merge" || algorithm === "quick") {
+          increment = Math.max(1, Math.floor(totalSteps / 50)); // Faster increment for complex algorithms
+        }
+        
+        stepCounterRef.current = Math.min(totalSteps, stepCounterRef.current + increment);
+        setCurrentStep(stepCounterRef.current);
+        
+        const percentage = Math.min(100, (stepCounterRef.current / totalSteps) * 100);
+        setProgressPercentage(percentage);
+        
+        if (stepCounterRef.current >= totalSteps) {
+          clearInterval(progressIntervalRef.current);
+        }
+      }
+    }, speed / 2); // Update progress faster than the sorting speed
   };
 
   const startSorting = async () => {
@@ -96,6 +162,16 @@ const SortingVisualizer = ({ goBack }) => {
     setIsPaused(false);
     resetSortingState();
     resetBarColors();
+    
+    // Calculate and set total steps
+    const steps = calculateTotalSteps(algorithm, array.length);
+    setTotalSteps(steps);
+    setCurrentStep(0);
+    setProgressPercentage(0);
+    stepCounterRef.current = 0;
+    
+    // Start progress simulation
+    startProgressSimulation(steps);
     
     try {
       switch(algorithm) {
@@ -117,6 +193,10 @@ const SortingVisualizer = ({ goBack }) => {
         default:
           await bubbleSort(array, setArray, speed);
       }
+      
+      // When sorting completes, set to 100%
+      setCurrentStep(steps);
+      setProgressPercentage(100);
     } catch (error) {
       if (error.message === "Sorting stopped by user") {
         console.log("Sorting stopped");
@@ -126,6 +206,10 @@ const SortingVisualizer = ({ goBack }) => {
     } finally {
       setIsSorting(false);
       setIsPaused(false);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
     }
   };
 
@@ -140,6 +224,12 @@ const SortingVisualizer = ({ goBack }) => {
       setIsSorting(false);
       setIsPaused(false);
       setStopState(true);
+      
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      
       setTimeout(() => {
         resetSortingState();
       }, 100);
@@ -149,7 +239,7 @@ const SortingVisualizer = ({ goBack }) => {
   const algorithmInfo = {
     bubble: {
       name: "Bubble Sort",
-      description: "Repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order. The algorithm gets its name because smaller elements 'bubble' to the top of the list.",
+      description: "Repeatedly steps through the list, compares adjacent elements and swaps them if they are in the wrong order.",
       timeComplexity: {
         best: "O(n)",
         average: "O(n²)",
@@ -161,7 +251,7 @@ const SortingVisualizer = ({ goBack }) => {
     },
     selection: {
       name: "Selection Sort",
-      description: "Divides the input list into two parts: sorted and unsorted. Repeatedly selects the smallest element from unsorted part and moves it to the sorted part. Simple but inefficient on large lists.",
+      description: "Divides the input list into two parts: sorted and unsorted. Repeatedly selects the smallest element from unsorted part.",
       timeComplexity: {
         best: "O(n²)",
         average: "O(n²)",
@@ -173,7 +263,7 @@ const SortingVisualizer = ({ goBack }) => {
     },
     insertion: {
       name: "Insertion Sort",
-      description: "Builds the final sorted array one item at a time. Much like sorting playing cards in your hands. Efficient for small data sets or nearly sorted data.",
+      description: "Builds the final sorted array one item at a time. Much like sorting playing cards in your hands.",
       timeComplexity: {
         best: "O(n)",
         average: "O(n²)",
@@ -185,7 +275,7 @@ const SortingVisualizer = ({ goBack }) => {
     },
     merge: {
       name: "Merge Sort",
-      description: "Divide and conquer algorithm that divides input array into two halves, recursively sorts them, and then merges the sorted halves. Guaranteed O(n log n) performance.",
+      description: "Divide and conquer algorithm that divides input array into two halves, recursively sorts them, and then merges.",
       timeComplexity: {
         best: "O(n log n)",
         average: "O(n log n)",
@@ -197,7 +287,7 @@ const SortingVisualizer = ({ goBack }) => {
     },
     quick: {
       name: "Quick Sort",
-      description: "Divide and conquer algorithm that picks a pivot element and partitions the array around the pivot. Very efficient for large data sets and widely used in practice.",
+      description: "Divide and conquer algorithm that picks a pivot element and partitions the array around the pivot.",
       timeComplexity: {
         best: "O(n log n)",
         average: "O(n log n)",
@@ -221,179 +311,231 @@ const SortingVisualizer = ({ goBack }) => {
         </div>
       </div>
 
-      {/* Custom Input Section */}
-      <div className="input-section">
-        <div className="input-group">
-          <label>Custom Array Input:</label>
-          <div className="input-with-buttons">
-            <input
-              type="text"
-              placeholder="Enter comma-separated numbers (e.g., 50, 25, 75, 10, 100)"
-              value={customInput}
-              onChange={(e) => setCustomInput(e.target.value)}
-              disabled={isSorting}
-              className="custom-input"
-            />
-            <button 
-              className="generate-random-btn"
-              onClick={generateRandomInput}
-              disabled={isSorting}
-            >
-              Random
-            </button>
-            <button 
-              className="apply-btn"
-              onClick={handleCustomInput}
-              disabled={isSorting}
-            >
-              Apply
-            </button>
-          </div>
-          {inputError && <div className="input-error">{inputError}</div>}
-          <div className="input-hint">
-            Enter numbers separated by commas (1-1000), max 100 numbers
+      {/* Main Visualization Container */}
+      <div className="main-visualization-container">
+        <div className="container-header">
+          <h2>Sorting Visualizer</h2>
+          <div className="status-indicator">
+            <div className={`status-dot ${isSorting ? (isPaused ? 'paused' : 'sorting') : 'idle'}`}></div>
+            <span>
+              {isSorting ? 
+                (isPaused ? 'PAUSED' : 'SORTING') : 
+                'READY'}
+            </span>
           </div>
         </div>
-      </div>
 
-      <div className="controls-panel">
-        <div className="control-group">
-          <label>Algorithm</label>
-          <select 
-            value={algorithm} 
-            onChange={(e) => setAlgorithm(e.target.value)}
-            disabled={isSorting}
-          >
-            <option value="bubble">Bubble Sort</option>
-            <option value="selection">Selection Sort</option>
-            <option value="insertion">Insertion Sort</option>
-            <option value="merge">Merge Sort</option>
-            <option value="quick">Quick Sort</option>
-          </select>
-        </div>
-
-        <div className="control-group">
-          <label>Array Size: {size}</label>
-          <input
-            type="range"
-            min="5"
-            max="100"
-            value={size}
-            onChange={(e) => setSize(parseInt(e.target.value))}
-            disabled={isSorting}
-          />
-        </div>
-
-        <div className="control-group">
-          <label>Speed: {speed}ms</label>
-          <input
-            type="range"
-            min="1"
-            max="100"
-            value={speed}
-            onChange={(e) => setSpeed(parseInt(e.target.value))}
-            disabled={isSorting}
-          />
-        </div>
-
-        <div className="control-buttons">
-          <button 
-            className="generate-btn" 
-            onClick={generateArray}
-            disabled={isSorting}
-          >
-            Random Array
-          </button>
-          <button 
-            className="sort-btn" 
-            onClick={startSorting}
-            disabled={isSorting}
-          >
-            {isSorting ? "Sorting..." : "Start Sorting"}
-          </button>
-          <button 
-            className="pause-btn"
-            onClick={togglePause}
-            disabled={!isSorting}
-          >
-            {isPaused ? "▶ Resume" : "⏸ Pause"}
-          </button>
-          <button 
-            className="stop-btn"
-            onClick={stopSorting}
-            disabled={!isSorting}
-          >
-            ⏹ Stop
-          </button>
-        </div>
-      </div>
-
-      <div className="visualization-area">
-        <div className="array-container">
-          {array.map((value, idx) => (
-            <div
-              key={idx}
-              id={`bar-${idx}`}
-              className="array-bar"
-              style={{
-                height: `${value}px`,
-                width: `${Math.max(5, 800 / size)}px`,
-                backgroundColor: "#3498db"
-              }}
-            >
-              <span className="bar-value">{size <= 40 ? value : ""}</span>
+        <div className="container-content">
+          {/* Left Panel - Controls */}
+          <div className="controls-panel">
+            <div className="input-section">
+              <h3>Custom Array Input:</h3>
+              <p>Enter comma-separated numbers (e.g., 50, 25, 75, 10, 100)</p>
+              <div className="input-with-buttons">
+                <input
+                  type="text"
+                  placeholder="50, 25, 75, 10, 100"
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  disabled={isSorting}
+                  className="custom-input"
+                />
+                <div className="input-buttons">
+                  <button 
+                    className="generate-random-btn"
+                    onClick={generateRandomInput}
+                    disabled={isSorting}
+                  >
+                    Random
+                  </button>
+                  <button 
+                    className="apply-btn"
+                    onClick={handleCustomInput}
+                    disabled={isSorting}
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+              {inputError && <div className="input-error">{inputError}</div>}
+              <div className="input-hint">
+                Enter numbers separated by commas (1-1000), max 30 numbers
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="legend">
-        <div className="legend-item">
-          <div className="legend-color" style={{ backgroundColor: "#3498db" }}></div>
-          <span>Unsorted</span>
-        </div>
-        <div className="legend-item">
-          <div className="legend-color" style={{ backgroundColor: "#ff6b6b" }}></div>
-          <span>Comparing</span>
-        </div>
-        <div className="legend-item">
-          <div className="legend-color" style={{ backgroundColor: "#4ecdc4" }}></div>
-          <span>Swapping</span>
-        </div>
-        <div className="legend-item">
-          <div className="legend-color" style={{ backgroundColor: "#2ecc71" }}></div>
-          <span>Sorted</span>
-        </div>
-        <div className="legend-item">
-          <div className="legend-color" style={{ backgroundColor: "#feca57" }}></div>
-          <span>Pivot/Min</span>
-        </div>
-      </div>
+            <div className="algorithm-selector">
+              <h3>Algorithm</h3>
+              <div className="algorithm-badge">
+                <strong>{algorithmInfo[algorithm].name}</strong>
+              </div>
+              <select 
+                value={algorithm} 
+                onChange={(e) => setAlgorithm(e.target.value)}
+                disabled={isSorting}
+              >
+                <option value="bubble">Bubble Sort</option>
+                <option value="selection">Selection Sort</option>
+                <option value="insertion">Insertion Sort</option>
+                <option value="merge">Merge Sort</option>
+                <option value="quick">Quick Sort</option>
+              </select>
+            </div>
 
-      <div className="algorithm-info">
-        <h3>About {algorithmInfo[algorithm].name}</h3>
-        <p>{algorithmInfo[algorithm].description}</p>
-        
-        <div className="complexity-grid">
-          <div className="complexity-card">
-            <h4>Time Complexity</h4>
-            <div className="complexity-values">
-              <span>Best: {algorithmInfo[algorithm].timeComplexity.best}</span>
-              <span>Average: {algorithmInfo[algorithm].timeComplexity.average}</span>
-              <span>Worst: {algorithmInfo[algorithm].timeComplexity.worst}</span>
+            <div className="config-section">
+              <div className="config-item">
+                <label htmlFor="arraySize">Array Size: {size}</label>
+                <input
+                  id="arraySize"
+                  type="range"
+                  min="5"
+                  max="30"
+                  value={size}
+                  onChange={(e) => setSize(parseInt(e.target.value))}
+                  disabled={isSorting}
+                />
+              </div>
+              
+              <div className="config-item">
+                <label htmlFor="speed">Speed: {speed}ms</label>
+                <input
+                  id="speed"
+                  type="range"
+                  min="5"
+                  max="200"
+                  value={speed}
+                  onChange={(e) => setSpeed(parseInt(e.target.value))}
+                  disabled={isSorting}
+                />
+              </div>
+            </div>
+
+            <div className="progress-section">
+              <div className="progress-info">
+                <span>Step: {currentStep} of {totalSteps}</span>
+                <span>{progressPercentage.toFixed(1)}%</span>
+              </div>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
+              </div>
+              {isSorting && (
+                <div className="progress-note">
+                  {algorithm === "merge" || algorithm === "quick" 
+                    ? "Estimated progress" 
+                    : "Progress"}
+                </div>
+              )}
             </div>
           </div>
-          <div className="complexity-card">
-            <h4>Space Complexity</h4>
-            <span>{algorithmInfo[algorithm].spaceComplexity}</span>
+
+          {/* Right Panel - Visualization */}
+          <div className="visualization-panel">
+            <div className="visualization-header">
+              <h3>Visualization</h3>
+              <div className="control-buttons">
+                <button 
+                  className="control-btn random-array" 
+                  onClick={generateArray}
+                  disabled={isSorting}
+                >
+                  Random Array
+                </button>
+                <button 
+                  className="control-btn start-sort" 
+                  onClick={startSorting}
+                  disabled={isSorting}
+                >
+                  {isSorting ? "Sorting..." : "Start Sorting"}
+                </button>
+                <button 
+                  className="control-btn pause-btn"
+                  onClick={togglePause}
+                  disabled={!isSorting}
+                >
+                  {isPaused ? "▶ Resume" : "⏸ Pause"}
+                </button>
+                <button 
+                  className="control-btn stop-btn"
+                  onClick={stopSorting}
+                  disabled={!isSorting}
+                >
+                  ⏹ Stop
+                </button>
+              </div>
+            </div>
+
+            <div className="visualization-area">
+              <div className="array-container">
+                {array.map((value, idx) => (
+                  <div
+                    key={idx}
+                    id={`bar-${idx}`}
+                    className="array-bar"
+                    style={{
+                      height: `${value}px`,
+                      width: `${Math.max(3, 600 / size)}px`,
+                      backgroundColor: "#3498db"
+                    }}
+                  >
+                    <span className="bar-value">{size <= 30 ? value : ""}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="legend">
+                <div className="legend-item">
+                  <div className="legend-color" style={{ backgroundColor: "#3498db" }}></div>
+                  <span>Unsorted</span>
+                </div>
+                <div className="legend-item">
+                  <div className="legend-color" style={{ backgroundColor: "#ff6b6b" }}></div>
+                  <span>Comparing</span>
+                </div>
+                <div className="legend-item">
+                  <div className="legend-color" style={{ backgroundColor: "#4ecdc4" }}></div>
+                  <span>Swapping</span>
+                </div>
+                <div className="legend-item">
+                  <div className="legend-color" style={{ backgroundColor: "#2ecc71" }}></div>
+                  <span>Sorted</span>
+                </div>
+                <div className="legend-item">
+                  <div className="legend-color" style={{ backgroundColor: "#feca57" }}></div>
+                  <span>Pivot/Min</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="complexity-card">
-            <h4>Stable</h4>
-            <span>{algorithmInfo[algorithm].stable}</span>
-          </div>
-          <div className="complexity-card">
-            <h4>In-Place</h4>
-            <span>{algorithmInfo[algorithm].inPlace}</span>
+        </div>
+
+        {/* Algorithm Info Section */}
+        <div className="algorithm-info-section">
+          <h3>About {algorithmInfo[algorithm].name}</h3>
+          <p>{algorithmInfo[algorithm].description}</p>
+          
+          <div className="complexity-grid">
+            <div className="complexity-card">
+              <h4>Time Complexity</h4>
+              <div className="complexity-values">
+                <span>Best: {algorithmInfo[algorithm].timeComplexity.best}</span>
+                <span>Average: {algorithmInfo[algorithm].timeComplexity.average}</span>
+                <span>Worst: {algorithmInfo[algorithm].timeComplexity.worst}</span>
+              </div>
+            </div>
+            <div className="complexity-card">
+              <h4>Space Complexity</h4>
+              <span>{algorithmInfo[algorithm].spaceComplexity}</span>
+            </div>
+            <div className="complexity-card">
+              <h4>Stable</h4>
+              <span>{algorithmInfo[algorithm].stable}</span>
+            </div>
+            <div className="complexity-card">
+              <h4>In-Place</h4>
+              <span>{algorithmInfo[algorithm].inPlace}</span>
+            </div>
           </div>
         </div>
       </div>
