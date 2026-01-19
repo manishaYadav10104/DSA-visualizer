@@ -1,33 +1,30 @@
-import { delay, highlightBars, markTargetBar, markComparingBars, resetBarColors } from "./BaseSearch";
+// LinearSearch.js
+import { waitIfPaused } from "./BaseSearch";
 
-export const linearSearch = async (array, target, speed, setComparisonCount, setFoundIndex) => {
-  const arr = [...array];
-  let comparisons = 0;
-  setFoundIndex(-1);
-  
-  // Reset all bars to default
-  resetBarColors(arr.length);
-  
-  for (let i = 0; i < arr.length; i++) {
-    comparisons++;
-    setComparisonCount(comparisons);
+export const linearSearch = async (array, target, speed, highlightBar, history) => {
+  for (let i = 0; i < array.length; i++) {
+    // Check if paused or stopped
+    const shouldContinue = await waitIfPaused();
+    if (!shouldContinue) {
+      throw new Error("Searching stopped by user");
+    }
+
+    // Highlight current bar
+    highlightBar(i, 'searching');
+    history.push({ index: i, value: array[i], found: false });
     
-    // Mark current bar as comparing
-    highlightBars([i], "#ff6b6b");
-    await delay(200 - speed);
+    await new Promise(resolve => setTimeout(resolve, speed));
     
-    if (arr[i] === target) {
-      // Found the target
-      markTargetBar(i, true);
-      setFoundIndex(i);
-      return { index: i, comparisons };
+    // Check if found
+    if (array[i] === target) {
+      highlightBar(i, 'found');
+      history[history.length - 1].found = true;
+      return i;
     }
     
-    // Mark as visited but not found
-    highlightBars([i], "#feca57");
+    // Mark as checked
+    highlightBar(i, 'checked');
   }
   
-  // Target not found
-  setFoundIndex(-1);
-  return { index: -1, comparisons };
+  return -1;
 };

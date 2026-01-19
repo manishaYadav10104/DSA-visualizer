@@ -1,63 +1,45 @@
-import { delay, highlightBars, markTargetBar, markComparingBars, resetBarColors } from "./BaseSearch";
+// BinarySearch.js
+import { waitIfPaused } from "./BaseSearch";
 
-export const binarySearch = async (array, target, speed, setComparisonCount, setFoundIndex) => {
-  // Binary search requires sorted array
-  const arr = [...array].sort((a, b) => a - b);
+export const binarySearch = async (array, target, speed, highlightBar, history) => {
   let left = 0;
-  let right = arr.length - 1;
-  let comparisons = 0;
-  setFoundIndex(-1);
-  
-  // Reset all bars to default
-  resetBarColors(arr.length);
-  
+  let right = array.length - 1;
+
   while (left <= right) {
+    // Check if paused or stopped
+    const shouldContinue = await waitIfPaused();
+    if (!shouldContinue) {
+      throw new Error("Searching stopped by user");
+    }
+
     const mid = Math.floor((left + right) / 2);
-    comparisons++;
-    setComparisonCount(comparisons);
     
-    // Highlight current range
-    for (let i = left; i <= right; i++) {
-      const bar = document.getElementById(`bar-${i}`);
-      if (bar) bar.style.backgroundColor = "#ff9ff3";
+    // Highlight middle bar
+    highlightBar(mid, 'searching');
+    history.push({ index: mid, value: array[mid], found: false });
+    
+    await new Promise(resolve => setTimeout(resolve, speed));
+
+    if (array[mid] === target) {
+      highlightBar(mid, 'found');
+      history[history.length - 1].found = true;
+      return mid;
     }
-    
-    // Highlight middle element
-    highlightBars([mid], "#4ecdc4");
-    await delay(250 - speed);
-    
-    if (arr[mid] === target) {
-      // Found the target
-      markTargetBar(mid, true);
-      setFoundIndex(mid);
-      return { index: mid, comparisons };
-    }
-    
-    // Reset middle bar
-    highlightBars([mid], "#3498db");
-    
-    if (arr[mid] < target) {
-      // Search in right half
-      // Mark left half as visited
-      for (let i = left; i < mid; i++) {
-        const bar = document.getElementById(`bar-${i}`);
-        if (bar) bar.style.backgroundColor = "#feca57";
+
+    if (array[mid] < target) {
+      // Highlight left part as checked
+      for (let i = left; i <= mid; i++) {
+        if (i !== mid) highlightBar(i, 'checked');
       }
       left = mid + 1;
     } else {
-      // Search in left half
-      // Mark right half as visited
-      for (let i = mid + 1; i <= right; i++) {
-        const bar = document.getElementById(`bar-${i}`);
-        if (bar) bar.style.backgroundColor = "#feca57";
+      // Highlight right part as checked
+      for (let i = mid; i <= right; i++) {
+        if (i !== mid) highlightBar(i, 'checked');
       }
       right = mid - 1;
     }
-    
-    await delay(150 - speed);
   }
-  
-  // Target not found
-  setFoundIndex(-1);
-  return { index: -1, comparisons };
+
+  return -1;
 };

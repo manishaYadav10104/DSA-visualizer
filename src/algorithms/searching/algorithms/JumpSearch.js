@@ -1,72 +1,63 @@
-import { delay, highlightBars, markTargetBar, markComparingBars, resetBarColors } from "./BaseSearch";
+// JumpSearch.js
+import { waitIfPaused } from "./BaseSearch";
 
-export const jumpSearch = async (array, target, speed, setComparisonCount, setFoundIndex) => {
-  // Jump search requires sorted array
-  const arr = [...array].sort((a, b) => a - b);
-  const n = arr.length;
+export const jumpSearch = async (array, target, speed, highlightBar, history) => {
+  const n = array.length;
   const step = Math.floor(Math.sqrt(n));
-  let comparisons = 0;
   let prev = 0;
-  setFoundIndex(-1);
-  
-  // Reset all bars to default
-  resetBarColors(arr.length);
-  
-  // Find the block where target may be present
-  while (arr[Math.min(step, n) - 1] < target) {
-    comparisons++;
-    setComparisonCount(comparisons);
-    
-    // Highlight current block
-    const start = prev;
-    const end = Math.min(prev + step, n) - 1;
-    for (let i = start; i <= end; i++) {
-      highlightBars([i], "#ff9ff3");
+
+  // Jump forward
+  while (array[Math.min(step, n) - 1] < target) {
+    // Check if paused or stopped
+    const shouldContinue = await waitIfPaused();
+    if (!shouldContinue) {
+      throw new Error("Searching stopped by user");
     }
-    await delay(200 - speed);
-    
-    // Reset previous block
-    for (let i = start; i <= end; i++) {
-      highlightBars([i], "#feca57");
-    }
-    
+
     prev = step;
-    step += Math.floor(Math.sqrt(n));
+    highlightBar(prev, 'current');
+    await new Promise(resolve => setTimeout(resolve, speed));
+    
     if (prev >= n) {
-      setFoundIndex(-1);
-      return { index: -1, comparisons };
+      return -1;
     }
   }
-  
+
   // Linear search in the block
-  while (arr[prev] < target) {
-    comparisons++;
-    setComparisonCount(comparisons);
+  while (array[prev] < target) {
+    // Check if paused or stopped
+    const shouldContinue = await waitIfPaused();
+    if (!shouldContinue) {
+      throw new Error("Searching stopped by user");
+    }
+
+    highlightBar(prev, 'searching');
+    history.push({ index: prev, value: array[prev], found: false });
     
-    highlightBars([prev], "#ff6b6b");
-    await delay(150 - speed);
-    highlightBars([prev], "#feca57");
+    await new Promise(resolve => setTimeout(resolve, speed));
     
     prev++;
     if (prev === Math.min(step, n)) {
-      setFoundIndex(-1);
-      return { index: -1, comparisons };
+      return -1;
     }
   }
-  
-  comparisons++;
-  setComparisonCount(comparisons);
-  
-  // Check if current element is target
-  highlightBars([prev], "#4ecdc4");
-  await delay(200 - speed);
-  
-  if (arr[prev] === target) {
-    markTargetBar(prev, true);
-    setFoundIndex(prev);
-    return { index: prev, comparisons };
+
+  // Check if element is found
+  const shouldContinue = await waitIfPaused();
+  if (!shouldContinue) {
+    throw new Error("Searching stopped by user");
   }
+
+  highlightBar(prev, 'searching');
+  history.push({ index: prev, value: array[prev], found: false });
   
-  setFoundIndex(-1);
-  return { index: -1, comparisons };
+  await new Promise(resolve => setTimeout(resolve, speed));
+
+  if (array[prev] === target) {
+    highlightBar(prev, 'found');
+    history[history.length - 1].found = true;
+    return prev;
+  }
+
+  return -1;
 };
