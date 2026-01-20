@@ -5,6 +5,24 @@ import "../styles/header.css";
 const Header = ({ setSelectedFeature }) => {
   const { isDarkMode } = useTheme();
 
+  const scrollToMainSection = () => {
+    // If MainSection is already visible (when on homepage), just scroll to it
+    const mainSection = document.querySelector('.main-section');
+    if (mainSection) {
+      mainSection.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // If not on homepage, set feature to null to show homepage with MainSection
+      setSelectedFeature && setSelectedFeature(null);
+      // Then scroll after a brief delay to ensure MainSection is rendered
+      setTimeout(() => {
+        const mainSection = document.querySelector('.main-section');
+        if (mainSection) {
+          mainSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  };
+
   return (
     <header className="header">
       <div className="hero-container">
@@ -17,15 +35,15 @@ const Header = ({ setSelectedFeature }) => {
         <div className="hero-buttons">
           <button 
             className="btn btn-primary"
-            onClick={() => setSelectedFeature && setSelectedFeature("sorting")}
+            onClick={scrollToMainSection}
           >
             Start Learning
           </button>
           <button 
             className="btn btn-secondary"
-            onClick={() => setSelectedFeature && setSelectedFeature("searching")}
+            onClick={() => setSelectedFeature && setSelectedFeature("sorting")}
           >
-            Explore Algorithms
+            Start Sorting
           </button>
         </div>
       </div>

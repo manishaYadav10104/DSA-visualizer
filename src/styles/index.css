@@ -39,3 +39,60 @@ button {
   cursor: pointer;
   background: none;
 }
+
+
+/* Global Graph Styles */
+:root {
+  --graph-node-size: 20px;
+  --graph-edge-width: 2px;
+  --graph-grid-gap: 60px;
+}
+
+/* Graph specific utility classes */
+.graph-node {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.graph-node:hover {
+  transform: scale(1.1);
+}
+
+.graph-edge {
+  transition: all 0.3s;
+}
+
+.graph-edge:hover {
+  stroke-width: 3px;
+}
+
+/* Graph controls spacing */
+.controls-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::before {
+  content: '';
+  width: 4px;
+  height: 16px;
+  background: #007bff;
+  border-radius: 2px;
+}
+
+.dark-theme .section-title {
+  color: #e6e6e6;
+}
+
+.dark-theme .section-title::before {
+  background: #4dabf7;
+}

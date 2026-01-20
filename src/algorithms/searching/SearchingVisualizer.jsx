@@ -51,15 +51,31 @@ const SearchingVisualizer = ({ goBack }) => {
     setSpeed(speedPresets[speedPreset].value);
   }, [speedPreset]);
 
+  // Helper function to scale bar heights properly
+  const getScaledHeight = (value) => {
+    if (array.length === 0) return 50;
+    
+    const minValue = Math.min(...array);
+    const maxValue = Math.max(...array);
+    
+    // If all values are the same, use a default height
+    if (minValue === maxValue) return 150;
+    
+    // Scale between 50px and 250px based on value range
+    const scaled = ((value - minValue) / (maxValue - minValue)) * 200 + 50;
+    return Math.max(50, Math.min(250, scaled));
+  };
+
   const generateSortedArray = () => {
     setIsGenerating(true);
     const newArray = [];
-    // Generate distinct sorted numbers for better visualization
+    // Generate values between 50 and 300 for better visualization
     for (let i = 0; i < size; i++) {
-      // Create increasing values with small variations
-      const baseValue = 50 + (i * 30); // Start from 50, increase by 30 each step
-      const randomVariation = Math.floor(Math.random() * 15);
-      newArray.push(baseValue + randomVariation);
+      // Create increasing values
+      const baseValue = 50 + (i * (200 / size));
+      const randomVariation = Math.floor(Math.random() * 20);
+      const value = Math.min(300, Math.max(50, baseValue + randomVariation));
+      newArray.push(Math.round(value));
     }
     
     // Ensure array is sorted
@@ -68,7 +84,8 @@ const SearchingVisualizer = ({ goBack }) => {
     // Make sure values are distinct
     const distinctArray = [...new Set(newArray)];
     while (distinctArray.length < size) {
-      distinctArray.push(distinctArray[distinctArray.length - 1] + 20);
+      const lastValue = distinctArray[distinctArray.length - 1] || 50;
+      distinctArray.push(Math.min(300, lastValue + 15));
     }
     
     setArray([...distinctArray.slice(0, size)]);
@@ -91,10 +108,11 @@ const SearchingVisualizer = ({ goBack }) => {
   const generateRandomArray = () => {
     setIsGenerating(true);
     const newArray = [];
-    // Generate random numbers with larger range for taller bars
+    // Generate values between 50 and 300 for better bar height
     for (let i = 0; i < size; i++) {
-      // Generate values between 40 and 400 for good bar height
-      newArray.push(Math.floor(Math.random() * 360) + 40);
+      // Generate values between 50 and 300
+      const value = Math.floor(Math.random() * 250) + 50;
+      newArray.push(value);
     }
     setArray([...newArray]);
     resetBarColors();
@@ -152,28 +170,40 @@ const SearchingVisualizer = ({ goBack }) => {
       const randomIndex = Math.floor(Math.random() * array.length);
       setSearchValue(array[randomIndex].toString());
     } else {
-      setSearchValue(Math.floor(Math.random() * 400 + 40).toString());
+      // Generate between 50 and 300 to match array values
+      setSearchValue((Math.floor(Math.random() * 250) + 50).toString());
     }
   };
 
   const highlightBar = (index, className) => {
     const bar = document.getElementById(`bar-${index}`);
     if (bar) {
+      // Store the current transform state for "found" bars
+      const isFound = bar.classList.contains('found');
+      
       // Remove previous classes except 'found'
       if (className !== 'found') {
         bar.classList.remove("searching", "checked", "current");
-        bar.style.transform = "scale(1)";
-        bar.style.boxShadow = "none";
+        
+        // Only reset transform if not found
+        if (!isFound) {
+          bar.style.transform = "scale(1)";
+          bar.style.boxShadow = "none";
+        }
       }
       
+      // Remove any existing class of the same type first
+      bar.classList.remove(className);
       bar.classList.add(className);
       
       // Set color and effects based on class
       switch(className) {
         case 'searching':
-          bar.style.backgroundColor = "#ff6b6b";
-          bar.style.transform = "scale(1.1)";
-          bar.style.boxShadow = "0 0 20px rgba(255, 107, 107, 0.7)";
+          if (!isFound) {
+            bar.style.backgroundColor = "#ff6b6b";
+            bar.style.transform = "scale(1.1)";
+            bar.style.boxShadow = "0 0 20px rgba(255, 107, 107, 0.7)";
+          }
           break;
         case 'found':
           bar.style.backgroundColor = "#2ecc71";
@@ -181,17 +211,23 @@ const SearchingVisualizer = ({ goBack }) => {
           bar.style.boxShadow = "0 0 30px rgba(46, 204, 113, 0.8)";
           break;
         case 'checked':
-          bar.style.backgroundColor = "#4ecdc4";
-          bar.style.transform = "scale(1.05)";
+          if (!isFound) {
+            bar.style.backgroundColor = "#4ecdc4";
+            bar.style.transform = "scale(1.05)";
+          }
           break;
         case 'current':
-          bar.style.backgroundColor = "#feca57";
-          bar.style.transform = "scale(1.1)";
-          bar.style.boxShadow = "0 0 15px rgba(254, 202, 87, 0.6)";
+          if (!isFound) {
+            bar.style.backgroundColor = "#feca57";
+            bar.style.transform = "scale(1.1)";
+            bar.style.boxShadow = "0 0 15px rgba(254, 202, 87, 0.6)";
+          }
           break;
         default:
-          bar.style.backgroundColor = "#3498db";
-          bar.style.transform = "scale(1)";
+          if (!isFound) {
+            bar.style.backgroundColor = "#3498db";
+            bar.style.transform = "scale(1)";
+          }
       }
     }
   };
@@ -265,8 +301,8 @@ const SearchingVisualizer = ({ goBack }) => {
       return;
     }
 
-    if (searchNum < 1 || searchNum > 1000) {
-      setInputError("Please enter a number between 1 and 1000");
+    if (searchNum < 50 || searchNum > 300) {
+      setInputError("Please enter a number between 50 and 300");
       return;
     }
 
@@ -483,8 +519,8 @@ const SearchingVisualizer = ({ goBack }) => {
                   onChange={handleSearchValueChange}
                   disabled={isSearching}
                   className="search-input"
-                  min="1"
-                  max="1000"
+                  min="50"
+                  max="300"
                 />
                 <div className="input-buttons">
                   <button 
@@ -688,8 +724,8 @@ const SearchingVisualizer = ({ goBack }) => {
                     id={`bar-${idx}`}
                     className={`array-bar ${foundIndex === idx ? 'found' : ''}`}
                     style={{
-                      height: `${value}px`, // Increased height: use actual value as pixels
-                      width: `${Math.max(25, 900 / size)}px`, // Wider bars
+                      height: `${getScaledHeight(value)}px`,
+                      width: `${Math.max(25, 900 / size)}px`,
                       backgroundColor: foundIndex === idx ? "#2ecc71" : "#3498db"
                     }}
                   >
@@ -724,11 +760,14 @@ const SearchingVisualizer = ({ goBack }) => {
 
               {searchHistory.length > 0 && (
                 <div className="search-history">
-                  <h4>Search Steps: {searchHistory.length}</h4>
+                  <div className="history-header">
+                    <h4>Search Steps</h4>
+                    <span className="history-count">{searchHistory.length} steps</span>
+                  </div>
                   <div className="history-steps">
-                    {searchHistory.slice(-6).map((step, idx) => (
+                    {searchHistory.map((step, idx) => (
                       <div key={idx} className="history-step">
-                        <span className="step-index">Step {searchHistory.length - 5 + idx}:</span>
+                        <span className="step-index">Step {idx + 1}:</span>
                         <span className="step-action">Index {step.index} → {step.value}</span>
                         <span className={`step-result ${step.found ? 'found' : 'not-found'}`}>
                           {step.found ? '✓ Found' : '→'}

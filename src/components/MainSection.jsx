@@ -27,7 +27,7 @@ const MainSection = ({ setSelectedFeature }) => {
       id: 3,
       title: "Graph Algorithms",
       description: "BFS, DFS, Dijkstra, Minimum Spanning Tree.",
-      category: "graph",
+      category: "graphs",
       icon: "📈",
       color: "#45B7D1"
     },

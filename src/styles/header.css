@@ -103,3 +103,51 @@
     max-width: 300px;
   }
 }
+
+/* Add to your existing header.css */
+
+.btn-tertiary {
+  background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(142, 68, 173, 0.3);
+}
+
+.btn-tertiary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(142, 68, 173, 0.4);
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+}
+
+.btn-tertiary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3);
+}
+
+/* If you want the buttons to be responsive and wrap nicely on mobile */
+.hero-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+
+/* Optional: Different color scheme for dark mode */
+@media (prefers-color-scheme: dark) {
+  .btn-tertiary {
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+  }
+  
+  .btn-tertiary:hover {
+    box-shadow: 0 6px 16px rgba(156, 39, 176, 0.4);
+    background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);
+  }
+}

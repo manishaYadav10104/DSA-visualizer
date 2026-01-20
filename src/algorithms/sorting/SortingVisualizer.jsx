@@ -26,6 +26,22 @@ const SortingVisualizer = ({ goBack }) => {
   const stepCounterRef = useRef(0);
   const progressIntervalRef = useRef(null);
 
+  // Helper function to scale bar heights properly
+ // Helper function to scale bar heights properly for 450px container
+const getScaledHeight = (value) => {
+  if (array.length === 0) return 40;
+  
+  const minValue = Math.min(...array);
+  const maxValue = Math.max(...array);
+  
+  // If all values are the same, use a default height
+  if (minValue === maxValue) return 250;
+  
+  // Scale between 40px and 430px based on value range (for 450px container)
+  const scaled = ((value - minValue) / (maxValue - minValue)) * 390 + 40;
+  return Math.max(40, Math.min(430, scaled));
+};
+
   useEffect(() => {
     generateArray();
     return () => {
@@ -39,7 +55,7 @@ const SortingVisualizer = ({ goBack }) => {
   const generateArray = () => {
     const newArray = [];
     for (let i = 0; i < size; i++) {
-      newArray.push(Math.floor(Math.random() * 500) + 10);
+      newArray.push(Math.floor(Math.random() * 400) + 50);
     }
     setArray([...newArray]);
     resetBarColors();
@@ -53,7 +69,10 @@ const SortingVisualizer = ({ goBack }) => {
   const resetBarColors = () => {
     for (let i = 0; i < size; i++) {
       const bar = document.getElementById(`bar-${i}`);
-      if (bar) bar.style.backgroundColor = "#3498db";
+      if (bar) {
+        bar.style.backgroundColor = "#3498db";
+        bar.classList.remove("comparing", "swapping", "sorted", "pivot");
+      }
     }
   };
 
@@ -72,10 +91,10 @@ const SortingVisualizer = ({ goBack }) => {
       const numbers = customInput
         .split(",")
         .map(num => parseInt(num.trim()))
-        .filter(num => !isNaN(num) && num >= 1 && num <= 1000);
+        .filter(num => !isNaN(num) && num >= 50 && num <= 500);
 
       if (numbers.length === 0) {
-        setInputError("Please enter valid numbers (1-1000)");
+        setInputError("Please enter valid numbers (50-500)");
         return;
       }
 
@@ -93,7 +112,7 @@ const SortingVisualizer = ({ goBack }) => {
       setProgressPercentage(0);
       stepCounterRef.current = 0;
     } catch (error) {
-      setInputError("Invalid input format. Use: 10, 25, 50, 100");
+      setInputError("Invalid input format. Use: 100, 250, 300, 150");
     }
   };
 
@@ -101,7 +120,7 @@ const SortingVisualizer = ({ goBack }) => {
     const randomNumbers = [];
     const count = Math.min(20, size);
     for (let i = 0; i < count; i++) {
-      randomNumbers.push(Math.floor(Math.random() * 500) + 10);
+      randomNumbers.push(Math.floor(Math.random() * 400) + 50);
     }
     setCustomInput(randomNumbers.join(", "));
   };
@@ -139,7 +158,7 @@ const SortingVisualizer = ({ goBack }) => {
         // Increment step based on algorithm speed
         let increment = 1;
         if (algorithm === "merge" || algorithm === "quick") {
-          increment = Math.max(1, Math.floor(totalSteps / 50)); // Faster increment for complex algorithms
+          increment = Math.max(1, Math.floor(totalSteps / 50));
         }
         
         stepCounterRef.current = Math.min(totalSteps, stepCounterRef.current + increment);
@@ -152,7 +171,7 @@ const SortingVisualizer = ({ goBack }) => {
           clearInterval(progressIntervalRef.current);
         }
       }
-    }, speed / 2); // Update progress faster than the sorting speed
+    }, speed / 2);
   };
 
   const startSorting = async () => {
@@ -330,11 +349,11 @@ const SortingVisualizer = ({ goBack }) => {
           <div className="controls-panel">
             <div className="input-section">
               <h3>Custom Array Input:</h3>
-              <p>Enter comma-separated numbers (e.g., 50, 25, 75, 10, 100)</p>
+              <p>Enter comma-separated numbers (e.g., 100, 250, 150, 300, 200)</p>
               <div className="input-with-buttons">
                 <input
                   type="text"
-                  placeholder="50, 25, 75, 10, 100"
+                  placeholder="100, 250, 150, 300, 200"
                   value={customInput}
                   onChange={(e) => setCustomInput(e.target.value)}
                   disabled={isSorting}
@@ -359,7 +378,7 @@ const SortingVisualizer = ({ goBack }) => {
               </div>
               {inputError && <div className="input-error">{inputError}</div>}
               <div className="input-hint">
-                Enter numbers separated by commas (1-1000), max 30 numbers
+                Enter numbers separated by commas (50-500), max 30 numbers
               </div>
             </div>
 
@@ -474,8 +493,8 @@ const SortingVisualizer = ({ goBack }) => {
                     id={`bar-${idx}`}
                     className="array-bar"
                     style={{
-                      height: `${value}px`,
-                      width: `${Math.max(3, 600 / size)}px`,
+                      height: `${getScaledHeight(value)}px`,
+                      width: `${Math.max(8, 700 / size)}px`,
                       backgroundColor: "#3498db"
                     }}
                   >
