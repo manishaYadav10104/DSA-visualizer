@@ -6,6 +6,9 @@ export default class DFS extends BaseGraph {
     this.name = 'Depth-First Search';
     this.description = 'Explores as far as possible along each branch before backtracking. Uses stack data structure.';
     this.complexity = 'O(V + E)';
+    this.timeComplexity = 'O(V + E)';
+    this.spaceComplexity = 'O(V)';
+    this.useCase = 'Path existence, cycle detection, topological sorting';
   }
 
   execute(startNode, endNode, graph) {

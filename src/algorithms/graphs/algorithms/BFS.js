@@ -6,6 +6,9 @@ export default class BFS extends BaseGraph {
     this.name = 'Breadth-First Search';
     this.description = 'Explores graph level by level. Guarantees shortest path in unweighted graphs.';
     this.complexity = 'O(V + E)';
+    this.timeComplexity = 'O(V + E)';
+    this.spaceComplexity = 'O(V)';
+    this.useCase = 'Unweighted graphs, finding shortest path';
   }
 
   execute(startNode, endNode, graph) {

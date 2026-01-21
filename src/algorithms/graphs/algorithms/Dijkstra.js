@@ -6,6 +6,9 @@ export default class Dijkstra extends BaseGraph {
     this.name = "Dijkstra's Algorithm";
     this.description = 'Finds shortest path in weighted graphs with non-negative weights.';
     this.complexity = 'O((V + E) log V)';
+    this.timeComplexity = 'O((V + E) log V)';
+    this.spaceComplexity = 'O(V)';
+    this.useCase = 'Weighted graphs, network routing, GPS navigation';
   }
 
   execute(startNode, endNode, graph) {

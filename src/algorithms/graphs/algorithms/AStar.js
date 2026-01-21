@@ -6,6 +6,9 @@ export default class AStar extends BaseGraph {
     this.name = 'A* Search Algorithm';
     this.description = 'Informed search algorithm using heuristics to find optimal path. Best for pathfinding in games and maps.';
     this.complexity = 'O(b^d)';
+    this.timeComplexity = 'O(b^d)';
+    this.spaceComplexity = 'O(b^d)';
+    this.useCase = 'Pathfinding in games, robotics, route planning';
   }
 
   // Manhattan distance heuristic for grid graphs
