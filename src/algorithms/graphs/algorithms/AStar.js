@@ -1,4 +1,4 @@
-import BaseGraph from './BaseGraph.js';
+import BaseGraph from './BaseGraphSearch.js';
 
 export default class AStar extends BaseGraph {
   constructor() {

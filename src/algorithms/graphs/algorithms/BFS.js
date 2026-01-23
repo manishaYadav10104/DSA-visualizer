@@ -1,48 +1,46 @@
-import BaseGraph from './BaseGraph.js';
+// BFS.js - Simple implementation
+import BaseGraphSearch from './BaseGraphSearch.js';
 
-export default class BFS extends BaseGraph {
+class BFS extends BaseGraphSearch {
   constructor() {
     super();
     this.name = 'Breadth-First Search';
-    this.description = 'Explores graph level by level. Guarantees shortest path in unweighted graphs.';
-    this.complexity = 'O(V + E)';
+    this.description = 'Explores graph level by level, guarantees shortest path in unweighted graphs.';
     this.timeComplexity = 'O(V + E)';
     this.spaceComplexity = 'O(V)';
     this.useCase = 'Unweighted graphs, finding shortest path';
   }
 
-  execute(startNode, endNode, graph) {
-    const startTime = performance.now();
+  async execute(startNode, endNode, graph) {
     this.reset();
     
-    if (!graph.hasNode(startNode) || !graph.hasNode(endNode)) {
-      this.addStep({
-        type: 'error',
-        message: 'Start or end node not found in graph'
-      });
-      return null;
-    }
-
-    const visited = new Set();
-    const queue = [{ node: startNode, path: [startNode], cost: 0 }];
-    const parent = new Map();
+    console.log('BFS starting from', startNode, 'to', endNode);
     
-    visited.add(startNode);
+    const queue = [{ node: startNode, cost: 0 }];
+    const visited = new Set([startNode]);
+    const parent = new Map();
     parent.set(startNode, null);
-
-    this.addStep({
-      type: 'start',
-      currentNode: startNode,
-      visited: Array.from(visited),
-      queue: queue.map(item => item.node),
-      path: [startNode]
-    });
-
+    
     while (queue.length > 0) {
-      const current = queue.shift();
-      const currentNode = current.node;
-
-      if (currentNode === endNode) {
+      // Check for stop
+      if (this.shouldStop) {
+        throw new Error("Search stopped by user");
+      }
+      
+      // Handle pause
+      while (this.isPaused) {
+        await this.sleep(100);
+      }
+      
+      const { node: current, cost } = queue.shift();
+      
+      // Mark current node
+      if (this.visualization) {
+        await this.visualization.markCurrent(current);
+      }
+      
+      // Check if we found the target
+      if (current === endNode) {
         // Reconstruct path
         const path = [];
         let node = endNode;
@@ -50,64 +48,59 @@ export default class BFS extends BaseGraph {
           path.unshift(node);
           node = parent.get(node);
         }
-
-        this.pathLength = path.length;
-        this.visitedNodes = visited.size;
-        this.totalCost = current.cost;
-        this.executionTime = performance.now() - startTime;
-
-        this.addStep({
-          type: 'found',
-          path: [...path],
-          visited: Array.from(visited),
-          totalCost: current.cost,
-          stats: this.getStats()
-        });
-
-        return path;
+        
+        this.path = path;
+        this.totalCost = cost;
+        this.visitedNodes = visited;
+        
+        // Mark the path
+        for (const nodeId of path) {
+          if (nodeId !== startNode && nodeId !== endNode && this.visualization) {
+            await this.visualization.markFound(nodeId);
+          }
+        }
+        
+        return { 
+          path, 
+          totalCost: cost,
+          visitedNodes: Array.from(visited)
+        };
       }
-
-      const neighbors = graph.getNeighbors(currentNode);
       
-      this.addStep({
-        type: 'visit',
-        currentNode,
-        visited: Array.from(visited),
-        neighbors: neighbors.map(n => n.node),
-        queue: queue.map(item => item.node)
-      });
-
+      // Get neighbors
+      const neighbors = graph.getNeighbors(current) || [];
+      
+      // Explore neighbors
       for (const neighbor of neighbors) {
-        if (!visited.has(neighbor.node)) {
-          visited.add(neighbor.node);
-          parent.set(neighbor.node, currentNode);
-          
-          queue.push({
-            node: neighbor.node,
-            path: [...current.path, neighbor.node],
-            cost: current.cost + neighbor.weight
-          });
-
-          this.addStep({
-            type: 'enqueue',
-            neighbor: neighbor.node,
-            visited: Array.from(visited),
-            queue: queue.map(item => item.node),
-            parent: neighbor.node
-          });
+        const neighborId = neighbor.node;
+        const weight = neighbor.weight || 1;
+        
+        // Skip walls and visited nodes
+        if (graph.isWall && graph.isWall(neighborId)) continue;
+        if (visited.has(neighborId)) continue;
+        
+        visited.add(neighborId);
+        parent.set(neighborId, current);
+        queue.push({ node: neighborId, cost: cost + weight });
+        
+        // Mark as checking
+        if (this.visualization) {
+          await this.visualization.markChecking(neighborId, `Enqueuing ${neighborId}`);
         }
       }
+      
+      // Mark as visited
+      if (this.visualization) {
+        await this.visualization.markVisited(current);
+      }
+      
+      // Small delay for visualization
+      await this.sleep(50);
     }
-
-    this.executionTime = performance.now() - startTime;
-    this.visitedNodes = visited.size;
     
-    this.addStep({
-      type: 'notFound',
-      visited: Array.from(visited),
-      stats: this.getStats()
-    });
-
+    // No path found
     return null;
   }
 }
+
+export default BFS;

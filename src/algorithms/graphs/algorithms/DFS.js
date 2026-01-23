@@ -1,99 +1,90 @@
-import BaseGraph from './BaseGraph.js';
+// DFS.js - Simple implementation
+import BaseGraphSearch from './BaseGraphSearch.js';
 
-export default class DFS extends BaseGraph {
+class DFS extends BaseGraphSearch {
   constructor() {
     super();
     this.name = 'Depth-First Search';
-    this.description = 'Explores as far as possible along each branch before backtracking. Uses stack data structure.';
-    this.complexity = 'O(V + E)';
+    this.description = 'Explores as far as possible along each branch before backtracking.';
     this.timeComplexity = 'O(V + E)';
     this.spaceComplexity = 'O(V)';
-    this.useCase = 'Path existence, cycle detection, topological sorting';
+    this.useCase = 'Maze solving, cycle detection, topological sort';
   }
 
-  execute(startNode, endNode, graph) {
-    const startTime = performance.now();
+  async execute(startNode, endNode, graph) {
     this.reset();
     
-    if (!graph.hasNode(startNode) || !graph.hasNode(endNode)) {
-      this.addStep({
-        type: 'error',
-        message: 'Start or end node not found in graph'
-      });
-      return null;
-    }
-
-    const visited = new Set();
-    const stack = [{ node: startNode, path: [startNode], cost: 0 }];
+    console.log('DFS starting from', startNode, 'to', endNode);
     
-    this.addStep({
-      type: 'start',
-      currentNode: startNode,
-      visited: Array.from(visited),
-      stack: stack.map(item => item.node)
-    });
-
+    const stack = [{ node: startNode, cost: 0 }];
+    const visited = new Set();
+    const parent = new Map();
+    parent.set(startNode, null);
+    
     while (stack.length > 0) {
-      const current = stack.pop();
-      const currentNode = current.node;
-
-      if (currentNode === endNode) {
-        this.pathLength = current.path.length;
-        this.visitedNodes = visited.size;
-        this.totalCost = current.cost;
-        this.executionTime = performance.now() - startTime;
-
-        this.addStep({
-          type: 'found',
-          path: [...current.path],
-          visited: Array.from(visited),
-          totalCost: current.cost,
-          stats: this.getStats()
-        });
-
-        return current.path;
+      if (this.shouldStop) throw new Error("Search stopped by user");
+      while (this.isPaused) await this.sleep(100);
+      
+      const { node: current, cost } = stack.pop();
+      
+      if (visited.has(current)) continue;
+      
+      visited.add(current);
+      
+      if (this.visualization) {
+        await this.visualization.markCurrent(current);
       }
-
-      if (!visited.has(currentNode)) {
-        visited.add(currentNode);
-
-        this.addStep({
-          type: 'visit',
-          currentNode,
-          visited: Array.from(visited),
-          stack: stack.map(item => item.node)
-        });
-
-        const neighbors = graph.getNeighbors(currentNode);
-        // Reverse neighbors to maintain consistent visualization
-        for (const neighbor of neighbors.reverse()) {
-          if (!visited.has(neighbor.node)) {
-            stack.push({
-              node: neighbor.node,
-              path: [...current.path, neighbor.node],
-              cost: current.cost + neighbor.weight
-            });
-
-            this.addStep({
-              type: 'push',
-              neighbor: neighbor.node,
-              visited: Array.from(visited),
-              stack: stack.map(item => item.node)
-            });
+      
+      if (current === endNode) {
+        const path = [];
+        let node = endNode;
+        while (node !== null) {
+          path.unshift(node);
+          node = parent.get(node);
+        }
+        
+        this.path = path;
+        this.totalCost = cost;
+        
+        // Mark the path
+        for (const nodeId of path) {
+          if (nodeId !== startNode && nodeId !== endNode && this.visualization) {
+            await this.visualization.markFound(nodeId);
           }
         }
+        
+        return { 
+          path, 
+          totalCost: cost,
+          visitedNodes: Array.from(visited)
+        };
       }
+      
+      const neighbors = graph.getNeighbors(current) || [];
+      for (const neighbor of neighbors) {
+        const neighborId = neighbor.node;
+        const weight = neighbor.weight || 1;
+        
+        if (graph.isWall && graph.isWall(neighborId)) continue;
+        if (visited.has(neighborId)) continue;
+        
+        parent.set(neighborId, current);
+        stack.push({ node: neighborId, cost: cost + weight });
+        
+        if (this.visualization) {
+          await this.visualization.markChecking(neighborId, `Pushing ${neighborId}`);
+        }
+      }
+      
+      if (this.visualization) {
+        await this.visualization.markVisited(current);
+      }
+      
+      await this.sleep(50);
     }
-
-    this.executionTime = performance.now() - startTime;
-    this.visitedNodes = visited.size;
     
-    this.addStep({
-      type: 'notFound',
-      visited: Array.from(visited),
-      stats: this.getStats()
-    });
-
     return null;
   }
 }
+
+export default DFS;

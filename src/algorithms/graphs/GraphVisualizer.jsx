@@ -2,12 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import "./graph.css";
 
-// Import algorithms from separate files
-import BFS from "./algorithms/BFS";
-import DFS from "./algorithms/DFS";
-import Dijkstra from "./algorithms/Dijkstra";
-import AStar from "./algorithms/AStar";
-
 // Graph class for managing nodes and edges
 class Graph {
   constructor() {
@@ -27,11 +21,9 @@ class Graph {
   }
 
   addEdge(from, to, weight) {
-    // Add to edges list
     if (!this.edges.has(from)) this.edges.set(from, []);
     this.edges.get(from).push({ to, weight });
     
-    // Add to adjacency list (both directions for undirected graph)
     this.adjacency.get(from).push({ node: to, weight });
     this.adjacency.get(to).push({ node: from, weight });
   }
@@ -79,30 +71,44 @@ class Graph {
   }
 }
 
-// Base search algorithm for visualization
-class BaseGraphSearch {
+// Simple algorithm implementations
+class BFS {
   constructor() {
-    this.isPaused = false;
-    this.shouldStop = false;
+    this.name = 'Breadth-First Search';
+    this.description = 'Explores graph level by level, guarantees shortest path in unweighted graphs.';
+    this.timeComplexity = 'O(V + E)';
+    this.spaceComplexity = 'O(V)';
+    this.useCase = 'Unweighted graphs, finding shortest path';
   }
+}
 
-  setPauseState(paused) {
-    this.isPaused = paused;
+class DFS {
+  constructor() {
+    this.name = 'Depth-First Search';
+    this.description = 'Explores as far as possible along each branch before backtracking.';
+    this.timeComplexity = 'O(V + E)';
+    this.spaceComplexity = 'O(V)';
+    this.useCase = 'Maze solving, cycle detection, topological sort';
   }
+}
 
-  setStopState(stop) {
-    this.shouldStop = stop;
+class Dijkstra {
+  constructor() {
+    this.name = "Dijkstra's Algorithm";
+    this.description = 'Finds shortest paths from source to all nodes in weighted graphs with non-negative weights.';
+    this.timeComplexity = 'O((V + E) log V)';
+    this.spaceComplexity = 'O(V)';
+    this.useCase = 'Weighted graphs with non-negative edges';
   }
+}
 
-  reset() {
-    this.isPaused = false;
-    this.shouldStop = false;
-  }
-
-  async sleep(ms) {
-    return new Promise(resolve => {
-      setTimeout(resolve, ms);
-    });
+class AStar {
+  constructor() {
+    this.name = 'A* Search Algorithm';
+    this.description = 'Optimized pathfinding using heuristics to guide search toward goal.';
+    this.timeComplexity = 'O(b^d)';
+    this.spaceComplexity = 'O(b^d)';
+    this.useCase = 'Pathfinding in games, maps, robotics';
   }
 }
 
@@ -121,8 +127,8 @@ const GraphVisualizer = ({ goBack }) => {
   const [algorithm, setAlgorithm] = useState("bfs");
   const [startNode, setStartNode] = useState("");
   const [endNode, setEndNode] = useState("");
-  const [speed, setSpeed] = useState(500);
-  const [speedPreset, setSpeedPreset] = useState("slow");
+  const [speed, setSpeed] = useState(300);
+  const [speedPreset, setSpeedPreset] = useState("medium");
   
   // Visualization state
   const [isVisualizing, setIsVisualizing] = useState(false);
@@ -141,14 +147,15 @@ const GraphVisualizer = ({ goBack }) => {
   
   const canvasRef = useRef(null);
   const resultTimeoutRef = useRef(null);
+  const visualizationActive = useRef(false);
   
   // Algorithm instances
-  const [algorithms, setAlgorithms] = useState({
-    bfs: null,
-    dfs: null,
-    dijkstra: null,
-    astar: null
-  });
+  const algorithms = {
+    bfs: new BFS(),
+    dfs: new DFS(),
+    dijkstra: new Dijkstra(),
+    astar: new AStar()
+  };
 
   // Speed presets
   const speedPresets = {
@@ -159,16 +166,6 @@ const GraphVisualizer = ({ goBack }) => {
     "very-fast": { value: 50, label: "Very Fast" }
   };
 
-  // Initialize algorithms on mount
-  useEffect(() => {
-    setAlgorithms({
-      bfs: new BFS(),
-      dfs: new DFS(),
-      dijkstra: new Dijkstra(),
-      astar: new AStar()
-    });
-  }, []);
-
   // Initialize graph
   useEffect(() => {
     generateGraph();
@@ -176,6 +173,7 @@ const GraphVisualizer = ({ goBack }) => {
       if (resultTimeoutRef.current) {
         clearTimeout(resultTimeoutRef.current);
       }
+      visualizationActive.current = false;
     };
   }, [graphType, rows, cols, numNodes, obstacleRatio, edgeProbability]);
 
@@ -184,6 +182,18 @@ const GraphVisualizer = ({ goBack }) => {
     setSpeed(speedPresets[speedPreset].value);
   }, [speedPreset]);
 
+  // Handle canvas resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current) {
+        drawGraph();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Generate graph
   const generateGraph = () => {
     setIsGenerating(true);
@@ -191,10 +201,16 @@ const GraphVisualizer = ({ goBack }) => {
     const newNodeStates = new Map();
     
     if (graphType === 'grid') {
-      // Generate grid graph
-      const nodeSize = 60;
-      const startX = 60;
-      const startY = 60;
+      // Calculate node size based on rows and columns
+      const maxWidth = 700;
+      const maxHeight = 400;
+      const nodeSize = Math.min(
+        maxWidth / (cols + 1),
+        maxHeight / (rows + 1)
+      );
+      
+      const startX = (maxWidth - (cols * nodeSize)) / 2;
+      const startY = (maxHeight - (rows * nodeSize)) / 2;
       
       // Create nodes
       for (let r = 0; r < rows; r++) {
@@ -205,14 +221,16 @@ const GraphVisualizer = ({ goBack }) => {
           newGraph.addNode(id, x, y);
           newNodeStates.set(id, 'unchecked');
           
-          // Add walls randomly
-          if (Math.random() < obstacleRatio && !(r === 0 && c === 0) && !(r === rows-1 && c === cols-1)) {
+          // Add walls randomly (but not start and end nodes)
+          if (Math.random() < obstacleRatio && 
+              !(r === 0 && c === 0) && 
+              !(r === rows-1 && c === cols-1)) {
             newGraph.addWall(id);
           }
         }
       }
       
-      // Create edges
+      // Create edges (4-directional grid)
       const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -236,9 +254,9 @@ const GraphVisualizer = ({ goBack }) => {
       setStartNode('N0-0');
       setEndNode(`N${rows-1}-${cols-1}`);
     } else {
-      // Generate random graph
-      const centerX = 400;
-      const centerY = 300;
+      // Random graph
+      const centerX = 350;
+      const centerY = 250;
       const radius = 200;
       
       // Create nodes in circular layout
@@ -268,7 +286,22 @@ const GraphVisualizer = ({ goBack }) => {
     }
     
     setGraph(newGraph);
-    setNodeStates(newNodeStates);
+    
+    // Set initial node states
+    const finalNodeStates = new Map();
+    newGraph.getAllNodes().forEach(node => {
+      if (newGraph.isWall(node.id)) {
+        finalNodeStates.set(node.id, 'wall');
+      } else if (node.id === startNode) {
+        finalNodeStates.set(node.id, 'start');
+      } else if (node.id === endNode) {
+        finalNodeStates.set(node.id, 'end');
+      } else {
+        finalNodeStates.set(node.id, 'unchecked');
+      }
+    });
+    
+    setNodeStates(finalNodeStates);
     setCurrentPath([]);
     setComparisonCount(0);
     setPathFound(false);
@@ -277,6 +310,7 @@ const GraphVisualizer = ({ goBack }) => {
     setInputError("");
     setIsGenerating(false);
     
+    // Draw graph after a short delay
     setTimeout(() => {
       drawGraph();
     }, 100);
@@ -288,37 +322,82 @@ const GraphVisualizer = ({ goBack }) => {
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Set canvas size
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    // Get container dimensions
+    const container = canvas.parentElement;
+    if (!container) return;
+    
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    
+    // Set canvas dimensions
+    canvas.width = containerWidth;
+    canvas.height = containerHeight;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     const allNodes = graph.getAllNodes();
     const allEdges = graph.getAllEdges();
     
-    // Draw edges first
+    if (allNodes.length === 0) return;
+    
+    // Calculate bounds
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    
+    allNodes.forEach(node => {
+      minX = Math.min(minX, node.x);
+      maxX = Math.max(maxX, node.x);
+      minY = Math.min(minY, node.y);
+      maxY = Math.max(maxY, node.y);
+    });
+    
+    // Add padding
+    const padding = 60;
+    const graphWidth = maxX - minX + padding * 2;
+    const graphHeight = maxY - minY + padding * 2;
+    
+    // Calculate scaling to fit canvas
+    const scaleX = canvas.width / graphWidth;
+    const scaleY = canvas.height / graphHeight;
+    const scale = Math.min(scaleX, scaleY);
+    
+    // Calculate offset to center the graph
+    const offsetX = (canvas.width - (graphWidth * scale)) / 2;
+    const offsetY = (canvas.height - (graphHeight * scale)) / 2;
+    
+    // Helper function to transform coordinates
+    const transformX = (x) => offsetX + (x - minX + padding) * scale;
+    const transformY = (y) => offsetY + (y - minY + padding) * scale;
+    
+    // Draw edges
     allEdges.forEach(edge => {
       const fromNode = graph.nodes.get(edge.from);
       const toNode = graph.nodes.get(edge.to);
       
       if (fromNode && toNode) {
+        const x1 = transformX(fromNode.x);
+        const y1 = transformY(fromNode.y);
+        const x2 = transformX(toNode.x);
+        const y2 = transformY(toNode.y);
+        
         ctx.beginPath();
-        ctx.moveTo(fromNode.x, fromNode.y);
-        ctx.lineTo(toNode.x, toNode.y);
-        ctx.strokeStyle = isDarkMode ? '#444' : '#ddd';
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = isDarkMode ? '#666' : '#999';
         ctx.lineWidth = 2;
         ctx.stroke();
         
         // Draw weight
-        const midX = (fromNode.x + toNode.x) / 2;
-        const midY = (fromNode.y + toNode.y) / 2;
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
         
         ctx.fillStyle = isDarkMode ? '#1a1a2e' : '#fff';
-        ctx.fillRect(midX - 12, midY - 8, 24, 16);
+        ctx.fillRect(midX - 15, midY - 10, 30, 20);
         
         ctx.fillStyle = isDarkMode ? '#fff' : '#333';
-        ctx.font = 'bold 11px Arial';
+        ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(edge.weight.toString(), midX, midY);
@@ -328,53 +407,50 @@ const GraphVisualizer = ({ goBack }) => {
     // Draw nodes
     allNodes.forEach(node => {
       const state = nodeStates.get(node.id) || 'unchecked';
-      let color = '#3498db'; // Default blue
-      let radius = 20;
+      const x = transformX(node.x);
+      const y = transformY(node.y);
       
-      // Determine color based on state
-      switch(state) {
-        case 'current':
-          color = '#feca57'; // Yellow
-          radius = 24;
-          break;
-        case 'checking':
-          color = '#ff6b6b'; // Red
-          radius = 22;
-          break;
-        case 'visited':
-          color = '#4ecdc4'; // Teal
-          break;
-        case 'found':
-          color = '#2ecc71'; // Green
-          radius = 22;
-          break;
-        case 'wall':
-          color = '#2c3e50'; // Dark blue
-          break;
-        case 'start':
-          color = '#27ae60'; // Green
-          radius = 24;
-          break;
-        case 'end':
-          color = '#e74c3c'; // Red
-          radius = 24;
-          break;
-        default:
-          color = '#3498db'; // Blue
-      }
+      let color = '#3498db';
+      let radius = 20 * scale;
       
-      // Special handling for start/end nodes
-      if (node.id === startNode && state !== 'wall') {
+      // Special handling for start and end nodes
+      if (node.id === startNode) {
         color = '#27ae60';
-        radius = 24;
-      } else if (node.id === endNode && state !== 'wall') {
+        radius = 25 * scale;
+      } else if (node.id === endNode) {
         color = '#e74c3c';
-        radius = 24;
+        radius = 25 * scale;
+      } else {
+        switch(state) {
+          case 'current':
+            color = '#feca57';
+            radius = 25 * scale;
+            break;
+          case 'checking':
+            color = '#ff6b6b';
+            radius = 22 * scale;
+            break;
+          case 'visited':
+            color = '#4ecdc4';
+            break;
+          case 'found':
+            color = '#2ecc71';
+            radius = 22 * scale;
+            break;
+          case 'wall':
+            color = '#2c3e50';
+            break;
+          default:
+            color = '#3498db';
+        }
       }
+      
+      // Ensure minimum radius
+      radius = Math.max(radius, 10);
       
       // Draw node
       ctx.beginPath();
-      ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
       
@@ -385,26 +461,30 @@ const GraphVisualizer = ({ goBack }) => {
       
       // Draw node label
       ctx.fillStyle = 'white';
-      ctx.font = 'bold 12px Arial';
+      ctx.font = `bold ${Math.max(10, 12 * scale)}px Arial`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(node.id.replace('N', ''), node.x, node.y);
+      const label = node.id.replace('N', '');
+      ctx.fillText(label, x, y);
     });
     
-    // Draw path lines if found
+    // Draw path if found
     if (currentPath.length > 1) {
       ctx.strokeStyle = '#2ecc71';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 4;
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
       
       currentPath.forEach((nodeId, index) => {
         const node = graph.nodes.get(nodeId);
         if (node) {
+          const x = transformX(node.x);
+          const y = transformY(node.y);
+          
           if (index === 0) {
-            ctx.moveTo(node.x, node.y);
+            ctx.moveTo(x, y);
           } else {
-            ctx.lineTo(node.x, node.y);
+            ctx.lineTo(x, y);
           }
         }
       });
@@ -416,7 +496,11 @@ const GraphVisualizer = ({ goBack }) => {
 
   // Highlight node during visualization
   const highlightNode = async (nodeId, state, message = "") => {
-    if (!nodeId) return;
+    if (!nodeId || nodeId === startNode || nodeId === endNode) {
+      return;
+    }
+    
+    if (!visualizationActive.current) return;
     
     setComparisonCount(prev => prev + 1);
     
@@ -424,12 +508,25 @@ const GraphVisualizer = ({ goBack }) => {
     newNodeStates.set(nodeId, state);
     setNodeStates(newNodeStates);
     
-    if (message && !isPaused) {
-      setSearchHistory(prev => [...prev, { node: nodeId, action: state, value: message }]);
+    if (message) {
+      setSearchHistory(prev => [...prev.slice(-19), { 
+        node: nodeId, 
+        action: state, 
+        value: message 
+      }]);
     }
     
     drawGraph();
-    await new Promise(resolve => setTimeout(resolve, speed));
+    
+    // Wait for the specified speed, but check for pause/stop
+    const startTime = Date.now();
+    while (Date.now() - startTime < speed) {
+      if (!visualizationActive.current || isPaused) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        continue;
+      }
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
   };
 
   // Show result
@@ -466,8 +563,8 @@ const GraphVisualizer = ({ goBack }) => {
   const clearResult = () => {
     if (resultTimeoutRef.current) {
       clearTimeout(resultTimeoutRef.current);
+      resultTimeoutRef.current = null;
     }
-    setGraphResult(null);
   };
 
   // Handle speed change
@@ -476,7 +573,7 @@ const GraphVisualizer = ({ goBack }) => {
     setSpeed(newSpeed);
     
     // Find closest preset
-    let closestPreset = "slow";
+    let closestPreset = "medium";
     let minDiff = Infinity;
     
     Object.entries(speedPresets).forEach(([preset, { value }]) => {
@@ -488,6 +585,302 @@ const GraphVisualizer = ({ goBack }) => {
     });
     
     setSpeedPreset(closestPreset);
+  };
+
+  // Algorithm implementations
+  const runBFS = async () => {
+    const queue = [{ node: startNode, cost: 0, path: [startNode] }];
+    const visited = new Set([startNode]);
+    let visitedCount = 1;
+    
+    while (queue.length > 0 && visualizationActive.current) {
+      // Handle pause
+      while (isPaused && visualizationActive.current) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      if (!visualizationActive.current) break;
+      
+      const { node: current, cost, path } = queue.shift();
+      
+      // Mark current node
+      await highlightNode(current, 'current', `Exploring ${current}`);
+      
+      // Check if we found the target
+      if (current === endNode) {
+        return { path, totalCost: cost, visitedCount };
+      }
+      
+      // Explore neighbors
+      const neighbors = graph.getNeighbors(current);
+      for (const neighbor of neighbors) {
+        if (!visualizationActive.current) break;
+        
+        const neighborId = neighbor.node;
+        const weight = neighbor.weight || 1;
+        
+        // Skip walls and visited nodes
+        if (graph.isWall(neighborId) || visited.has(neighborId)) continue;
+        
+        visited.add(neighborId);
+        visitedCount++;
+        
+        // Mark as checking
+        await highlightNode(neighborId, 'checking', `Found ${neighborId}`);
+        
+        // Add to queue
+        queue.push({
+          node: neighborId,
+          cost: cost + weight,
+          path: [...path, neighborId]
+        });
+      }
+      
+      // Mark as visited
+      await highlightNode(current, 'visited', `Visited ${current}`);
+    }
+    
+    return null;
+  };
+
+  const runDFS = async () => {
+    const stack = [{ node: startNode, cost: 0, path: [startNode] }];
+    const visited = new Set([startNode]);
+    let visitedCount = 1;
+    
+    while (stack.length > 0 && visualizationActive.current) {
+      // Handle pause
+      while (isPaused && visualizationActive.current) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      if (!visualizationActive.current) break;
+      
+      const { node: current, cost, path } = stack.pop();
+      
+      // Mark current node
+      await highlightNode(current, 'current', `Exploring ${current}`);
+      
+      // Check if we found the target
+      if (current === endNode) {
+        return { path, totalCost: cost, visitedCount };
+      }
+      
+      // Explore neighbors
+      const neighbors = graph.getNeighbors(current);
+      for (const neighbor of neighbors) {
+        if (!visualizationActive.current) break;
+        
+        const neighborId = neighbor.node;
+        const weight = neighbor.weight || 1;
+        
+        // Skip walls and visited nodes
+        if (graph.isWall(neighborId) || visited.has(neighborId)) continue;
+        
+        visited.add(neighborId);
+        visitedCount++;
+        
+        // Mark as checking
+        await highlightNode(neighborId, 'checking', `Found ${neighborId}`);
+        
+        // Add to stack
+        stack.push({
+          node: neighborId,
+          cost: cost + weight,
+          path: [...path, neighborId]
+        });
+      }
+      
+      // Mark as visited
+      await highlightNode(current, 'visited', `Visited ${current}`);
+    }
+    
+    return null;
+  };
+
+  const runDijkstra = async () => {
+    const distances = new Map();
+    const visited = new Set();
+    const previous = new Map();
+    const unvisited = new Set();
+    
+    // Initialize distances
+    graph.getAllNodes().forEach(node => {
+      if (!graph.isWall(node.id)) {
+        distances.set(node.id, Infinity);
+        unvisited.add(node.id);
+      }
+    });
+    
+    distances.set(startNode, 0);
+    previous.set(startNode, null);
+    let visitedCount = 0;
+    
+    while (unvisited.size > 0 && visualizationActive.current) {
+      // Handle pause
+      while (isPaused && visualizationActive.current) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      if (!visualizationActive.current) break;
+      
+      // Find node with smallest distance
+      let current = null;
+      let minDistance = Infinity;
+      
+      for (const nodeId of unvisited) {
+        const dist = distances.get(nodeId);
+        if (dist < minDistance) {
+          minDistance = dist;
+          current = nodeId;
+        }
+      }
+      
+      if (!current || minDistance === Infinity) break;
+      
+      // Mark current node
+      await highlightNode(current, 'current', `Dist: ${minDistance}`);
+      
+      // Check if we found the target
+      if (current === endNode) {
+        // Reconstruct path
+        const path = [];
+        let node = endNode;
+        while (node !== null) {
+          path.unshift(node);
+          node = previous.get(node);
+        }
+        return { path, totalCost: minDistance, visitedCount };
+      }
+      
+      unvisited.delete(current);
+      visited.add(current);
+      visitedCount++;
+      
+      // Update neighbors
+      const neighbors = graph.getNeighbors(current);
+      for (const neighbor of neighbors) {
+        if (!visualizationActive.current) break;
+        
+        const neighborId = neighbor.node;
+        const weight = neighbor.weight || 1;
+        
+        if (graph.isWall(neighborId) || visited.has(neighborId)) continue;
+        
+        const alt = minDistance + weight;
+        if (alt < distances.get(neighborId)) {
+          distances.set(neighborId, alt);
+          previous.set(neighborId, current);
+          await highlightNode(neighborId, 'checking', `New dist: ${alt}`);
+        }
+      }
+      
+      // Mark as visited
+      await highlightNode(current, 'visited', `Processed ${current}`);
+    }
+    
+    return null;
+  };
+
+  const runAStar = async () => {
+    const openSet = new Set([startNode]);
+    const cameFrom = new Map();
+    const gScore = new Map();
+    const fScore = new Map();
+    
+    // Initialize scores
+    graph.getAllNodes().forEach(node => {
+      if (!graph.isWall(node.id)) {
+        gScore.set(node.id, Infinity);
+        fScore.set(node.id, Infinity);
+      }
+    });
+    
+    gScore.set(startNode, 0);
+    
+    // Heuristic function (Euclidean distance)
+    const heuristic = (nodeId) => {
+      const nodeA = graph.nodes.get(nodeId);
+      const nodeB = graph.nodes.get(endNode);
+      if (!nodeA || !nodeB) return 0;
+      
+      const dx = nodeA.x - nodeB.x;
+      const dy = nodeA.y - nodeB.y;
+      return Math.sqrt(dx * dx + dy * dy) / 100;
+    };
+    
+    fScore.set(startNode, heuristic(startNode));
+    let visitedCount = 0;
+    
+    while (openSet.size > 0 && visualizationActive.current) {
+      // Handle pause
+      while (isPaused && visualizationActive.current) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      if (!visualizationActive.current) break;
+      
+      // Find node with lowest fScore
+      let current = null;
+      let lowestFScore = Infinity;
+      
+      for (const nodeId of openSet) {
+        const score = fScore.get(nodeId);
+        if (score < lowestFScore) {
+          lowestFScore = score;
+          current = nodeId;
+        }
+      }
+      
+      if (!current) break;
+      
+      // Mark current node
+      await highlightNode(current, 'current', `fScore: ${lowestFScore.toFixed(1)}`);
+      
+      // Check if we found the target
+      if (current === endNode) {
+        // Reconstruct path
+        const path = [endNode];
+        let node = endNode;
+        while (cameFrom.has(node)) {
+          node = cameFrom.get(node);
+          path.unshift(node);
+        }
+        return { path, totalCost: gScore.get(endNode), visitedCount };
+      }
+      
+      openSet.delete(current);
+      visitedCount++;
+      
+      // Explore neighbors
+      const neighbors = graph.getNeighbors(current);
+      for (const neighbor of neighbors) {
+        if (!visualizationActive.current) break;
+        
+        const neighborId = neighbor.node;
+        const weight = neighbor.weight || 1;
+        
+        if (graph.isWall(neighborId)) continue;
+        
+        const tentativeGScore = gScore.get(current) + weight;
+        
+        if (tentativeGScore < gScore.get(neighborId)) {
+          cameFrom.set(neighborId, current);
+          gScore.set(neighborId, tentativeGScore);
+          fScore.set(neighborId, tentativeGScore + heuristic(neighborId));
+          
+          if (!openSet.has(neighborId)) {
+            openSet.add(neighborId);
+            await highlightNode(neighborId, 'checking', `fScore: ${fScore.get(neighborId).toFixed(1)}`);
+          }
+        }
+      }
+      
+      // Mark as visited
+      await highlightNode(current, 'visited', `Processed ${current}`);
+    }
+    
+    return null;
   };
 
   // Start visualization
@@ -509,6 +902,7 @@ const GraphVisualizer = ({ goBack }) => {
       return;
     }
     
+    // Reset visualization state
     setIsVisualizing(true);
     setIsPaused(false);
     setComparisonCount(0);
@@ -516,6 +910,7 @@ const GraphVisualizer = ({ goBack }) => {
     setSearchHistory([]);
     setCurrentPath([]);
     clearResult();
+    visualizationActive.current = true;
     
     // Reset node states
     const newNodeStates = new Map();
@@ -532,46 +927,49 @@ const GraphVisualizer = ({ goBack }) => {
     });
     setNodeStates(newNodeStates);
     
-    // Get algorithm instance
-    const algoInstance = algorithms[algorithm];
-    if (!algoInstance) {
-      setGraphResult({
-        type: 'error',
-        message: 'Algorithm not initialized'
-      });
-      setIsVisualizing(false);
-      return;
-    }
+    // Redraw graph
+    drawGraph();
     
-    // Create visualization wrapper for the algorithm
-    const visualizer = new BaseGraphSearch();
+    // Wait a bit before starting
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     try {
-      const history = [];
-      const result = await executeAlgorithm(
-        algoInstance,
-        graph,
-        startNode,
-        endNode,
-        visualizer,
-        history
-      );
+      let result;
       
-      setSearchHistory(history);
+      // Run selected algorithm
+      switch (algorithm) {
+        case 'bfs':
+          result = await runBFS();
+          break;
+        case 'dfs':
+          result = await runDFS();
+          break;
+        case 'dijkstra':
+          result = await runDijkstra();
+          break;
+        case 'astar':
+          result = await runAStar();
+          break;
+        default:
+          result = await runBFS();
+      }
       
-      if (result) {
-        showResult(result, result.cost, result.visitedCount);
-      } else {
-        showResult(null, 0, history.filter(h => h.action === 'visited').length);
+      if (result && visualizationActive.current) {
+        // Animate the found path
+        for (const nodeId of result.path) {
+          if (!visualizationActive.current) break;
+          if (nodeId !== startNode && nodeId !== endNode) {
+            await highlightNode(nodeId, 'found', `Path node`);
+          }
+        }
+        
+        showResult(result, result.totalCost, result.visitedCount || searchHistory.length);
+      } else if (visualizationActive.current) {
+        showResult(null, 0, searchHistory.length);
       }
     } catch (error) {
-      if (error.message === "Search stopped by user") {
-        setGraphResult({
-          type: 'stopped',
-          message: '⏹ Visualization stopped by user'
-        });
-      } else {
-        console.error("Visualization error:", error);
+      console.error("Visualization error:", error);
+      if (visualizationActive.current) {
         setGraphResult({
           type: 'error',
           message: '❌ An error occurred during visualization'
@@ -580,42 +978,19 @@ const GraphVisualizer = ({ goBack }) => {
     } finally {
       setIsVisualizing(false);
       setIsPaused(false);
+      visualizationActive.current = false;
     }
-  };
-
-  // Execute algorithm with visualization
-  const executeAlgorithm = async (algorithm, graph, startNode, endNode, visualizer, history) => {
-    // Map algorithm result to visualization format
-    const result = algorithm.execute(startNode, endNode, {
-      getAllNodes: () => graph.getAllNodes().map(n => n.id),
-      getNeighbors: (nodeId) => graph.getNeighbors(nodeId),
-      hasNode: (nodeId) => graph.hasNode(nodeId)
-    });
-    
-    // Simulate visualization steps
-    if (result) {
-      return {
-        path: result,
-        cost: algorithm.totalCost || result.length,
-        visitedCount: algorithm.visitedNodes || result.length
-      };
-    }
-    
-    return null;
   };
 
   // Toggle pause
   const togglePause = () => {
     if (!isVisualizing) return;
-    
-    const newPausedState = !isPaused;
-    setIsPaused(newPausedState);
+    setIsPaused(!isPaused);
   };
 
   // Stop visualization
   const stopVisualization = () => {
-    if (!isVisualizing) return;
-    
+    visualizationActive.current = false;
     setIsVisualizing(false);
     setIsPaused(false);
   };
@@ -652,22 +1027,54 @@ const GraphVisualizer = ({ goBack }) => {
     
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
     
-    const nodes = graph.getAllNodes();
-    for (const node of nodes) {
-      const distance = Math.sqrt(Math.pow(x - node.x, 2) + Math.pow(y - node.y, 2));
+    const allNodes = graph.getAllNodes();
+    
+    // Calculate bounds (same as in drawGraph)
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    
+    allNodes.forEach(node => {
+      minX = Math.min(minX, node.x);
+      maxX = Math.max(maxX, node.x);
+      minY = Math.min(minY, node.y);
+      maxY = Math.max(maxY, node.y);
+    });
+    
+    const padding = 60;
+    const graphWidth = maxX - minX + padding * 2;
+    const graphHeight = maxY - minY + padding * 2;
+    
+    const scaleX = canvas.width / graphWidth;
+    const scaleY = canvas.height / graphHeight;
+    const scale = Math.min(scaleX, scaleY);
+    
+    const offsetX = (canvas.width - (graphWidth * scale)) / 2;
+    const offsetY = (canvas.height - (graphHeight * scale)) / 2;
+    
+    // Transform click coordinates back to graph coordinates
+    const graphX = ((clickX - offsetX) / scale) + minX - padding;
+    const graphY = ((clickY - offsetY) / scale) + minY - padding;
+    
+    // Find clicked node
+    for (const node of allNodes) {
+      const distance = Math.sqrt(
+        Math.pow(graphX - node.x, 2) + 
+        Math.pow(graphY - node.y, 2)
+      );
       
-      if (distance <= 25 && node.id !== startNode && node.id !== endNode) {
+      if (distance <= 30 && node.id !== startNode && node.id !== endNode) {
         const newGraph = new Graph();
         
-        // Copy all data from current graph
+        // Copy all nodes
         graph.getAllNodes().forEach(n => {
           newGraph.addNode(n.id, n.x, n.y);
           if (graph.isWall(n.id)) newGraph.addWall(n.id);
         });
         
+        // Copy all edges
         graph.getAllEdges().forEach(edge => {
           newGraph.addEdge(edge.from, edge.to, edge.weight);
         });
@@ -725,7 +1132,6 @@ const GraphVisualizer = ({ goBack }) => {
     setStartNode(randomStart.id);
     setEndNode(randomEnd.id);
     
-    // Update node states
     const newNodeStates = new Map();
     graph.getAllNodes().forEach(node => {
       if (graph.isWall(node.id)) {
@@ -743,18 +1149,16 @@ const GraphVisualizer = ({ goBack }) => {
     drawGraph();
   };
 
-  // Algorithm information
-  const algorithmInfo = algorithms[algorithm] || { 
-    name: 'Breadth-First Search',
-    description: 'Explores graph level by level, guarantees shortest path in unweighted graphs.',
-    timeComplexity: 'O(V + E)',
-    spaceComplexity: 'O(V)',
-    useCase: 'Unweighted graphs, finding shortest path'
-  };
+  // Get algorithm info
+  const algorithmInfo = algorithms[algorithm] || algorithms.bfs;
 
   // Redraw when state changes
   useEffect(() => {
-    drawGraph();
+    const timer = setTimeout(() => {
+      drawGraph();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [nodeStates, currentPath, isDarkMode]);
 
   return (
@@ -769,7 +1173,6 @@ const GraphVisualizer = ({ goBack }) => {
         </div>
       </div>
 
-      {/* Main Visualization Container */}
       <div className="main-visualization-container">
         <div className="container-header">
           <h2>Graph Algorithm Visualizer</h2>
@@ -1075,12 +1478,41 @@ const GraphVisualizer = ({ goBack }) => {
                 <canvas 
                   className="graph-canvas" 
                   ref={canvasRef}
-                  width={800}
-                  height={500}
                   onClick={handleCanvasClick}
-                  style={{ cursor: isVisualizing ? 'default' : 'pointer' }}
+                  style={{ 
+                    cursor: isVisualizing ? 'default' : 'pointer'
+                  }}
                 />
               </div>
+
+              {/* ALGORITHM STEPS - MOVED HERE (between graph and legend) */}
+              {searchHistory.length > 0 && (
+                <div className="search-history">
+                  <div className="history-header">
+                    <h4>Algorithm Steps</h4>
+                    <span className="history-count">{searchHistory.length} steps</span>
+                  </div>
+                  <div className="history-steps">
+                    {searchHistory.slice(-10).map((step, idx) => (
+                      <div key={idx} className="history-step">
+                        <span className="step-index">Step {searchHistory.length - 10 + idx + 1}:</span>
+                        <span className="step-action">
+                          {step.node} 
+                          {step.action === 'current' ? ' → Current' : 
+                           step.action === 'checking' ? ' → Checking' :
+                           step.action === 'visited' ? ' ✓ Visited' :
+                           step.action === 'found' ? ' 🎯 Path' : ''}
+                        </span>
+                        {step.value && (
+                          <span className="step-result">
+                            {step.value}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="legend">
                 <div className="legend-item">
@@ -1111,41 +1543,7 @@ const GraphVisualizer = ({ goBack }) => {
                   <div className="legend-color" style={{ backgroundColor: "#2c3e50" }}></div>
                   <span>Wall/Obstacle</span>
                 </div>
-                <div className="legend-item">
-                  <div className="legend-color" style={{ backgroundColor: "#feca57" }}></div>
-                  <span>Edge Weight</span>
-                </div>
               </div>
-
-              {searchHistory.length > 0 && (
-                <div className="search-history">
-                  <div className="history-header">
-                    <h4>Algorithm Steps</h4>
-                    <span className="history-count">{searchHistory.length} steps</span>
-                  </div>
-                  <div className="history-steps">
-                    {searchHistory.slice(-10).map((step, idx) => (
-                      <div key={idx} className="history-step">
-                        <span className="step-index">Step {searchHistory.length - 10 + idx + 1}:</span>
-                        <span className="step-action">
-                          {step.node} 
-                          {step.action === 'start' ? ' (Start)' : 
-                           step.action === 'explore' ? ' → Exploring' :
-                           step.action === 'visited' ? ' ✓ Visited' :
-                           step.action === 'found' ? ' 🎯 Target!' :
-                           step.action === 'update' ? ' 📊 Updated' :
-                           step.action === 'evaluate' ? ' ⚖ Evaluating' : ''}
-                        </span>
-                        {step.value && (
-                          <span className="step-result">
-                            {step.value}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -1163,10 +1561,6 @@ const GraphVisualizer = ({ goBack }) => {
             <div className="complexity-card">
               <h4>Space Complexity</h4>
               <span className="complexity-value">{algorithmInfo.spaceComplexity}</span>
-            </div>
-            <div className="complexity-card">
-              <h4>Sorted Required</h4>
-              <span className="complexity-value">No</span>
             </div>
             <div className="complexity-card">
               <h4>Best Use Case</h4>
