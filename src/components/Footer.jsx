@@ -24,8 +24,8 @@ const Footer = ({ setSelectedFeature }) => {
               <h4>Algorithms</h4>
               <button onClick={() => handleNavigation("sorting")}>Sorting</button>
               <button onClick={() => handleNavigation("searching")}>Searching</button>
-              <button>Graph</button>
-              <button>Trees</button>
+              <button onClick={() => handleNavigation("graphs")}>Graph Algorithms</button>
+              <button onClick={() => handleNavigation("trees")}>Tree Algorithms</button>
             </div>
             <div className="footer-section">
               <h4>Resources</h4>

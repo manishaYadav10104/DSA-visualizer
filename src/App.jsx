@@ -7,6 +7,8 @@ import Footer from "./components/Footer";
 import SortingVisualizer from "./algorithms/sorting/SortingVisualizer";
 import SearchingVisualizer from "./algorithms/searching/SearchingVisualizer";
 import GraphVisualizer from "./algorithms/graphs/GraphVisualizer";
+import TreeVisualizer from './algorithms/trees/TreeVisualizer';
+
 import "./styles/index.css";
 
 function App() {
@@ -29,6 +31,8 @@ function App() {
         <SearchingVisualizer goBack={handleGoBack} />
       ) : selectedFeature === "graphs" ? (
         <GraphVisualizer goBack={handleGoBack} />
+      ) : selectedFeature === "trees" ? (
+        <TreeVisualizer goBack={handleGoBack} />
       ) : (
         <>
           <Header setSelectedFeature={setSelectedFeature} />
