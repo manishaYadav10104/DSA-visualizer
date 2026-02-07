@@ -1,89 +1,119 @@
 import React from 'react';
+import '../tree.css';
 
-const BinaryTree = ({ data }) => {
-  const buildBinaryTree = () => {
-    if (!data || data.length === 0) return [];
-    
-    const positions = [];
+const BinaryTree = ({ data = [] }) => {
+  if (data.length === 0) {
+    return (
+      <div className="algorithm-container binary-tree">
+        <div className="algorithm-header">
+          <h3>Binary Tree</h3>
+          <div className="algorithm-stats">
+            <span className="stat">Nodes: 0</span>
+            <span className="stat">Height: 0</span>
+          </div>
+        </div>
+        <div className="visualization-placeholder">
+          <p>No nodes to display</p>
+        </div>
+      </div>
+    );
+  }
+
+  const sortedData = [...data].sort((a, b) => a.value - b.value);
+  const levels = Math.ceil(Math.log2(data.length + 1));
+  
+  const buildTreeNodes = () => {
+    const nodes = [];
+    const edges = [];
     
     // Simple binary tree layout
-    data.forEach((node, index) => {
-      const level = Math.floor(Math.log2(index + 1));
-      const positionInLevel = index + 1 - Math.pow(2, level);
+    for (let i = 0; i < sortedData.length; i++) {
+      const level = Math.floor(Math.log2(i + 1));
+      const posInLevel = i + 1 - Math.pow(2, level);
       const totalInLevel = Math.pow(2, level);
-      const spacing = 800 / (totalInLevel + 1);
       
-      positions.push({
-        id: node.id,
-        value: node.value,
-        x: (positionInLevel + 1) * spacing,
-        y: level * 80 + 50,
-        level: level,
-        leftChildIndex: 2 * index + 1,
-        rightChildIndex: 2 * index + 2
-      });
-    });
+      const x = (posInLevel + 0.5) * (800 / totalInLevel);
+      const y = level * 80 + 50;
+      
+      nodes.push(
+        <g key={sortedData[i].id}>
+          <circle
+            cx={x}
+            cy={y}
+            r="20"
+            className="tree-node binary-node"
+          />
+          <text
+            x={x}
+            y={y}
+            textAnchor="middle"
+            dy=".3em"
+            className="node-value"
+          >
+            {sortedData[i].value}
+          </text>
+        </g>
+      );
+      
+      // Draw edges to children
+      if (2 * i + 1 < sortedData.length) {
+        const childLevel = level + 1;
+        const childPos = 2 * (posInLevel) + 0.5;
+        const childTotal = Math.pow(2, childLevel);
+        const childX = (childPos) * (800 / childTotal);
+        const childY = childLevel * 80 + 50;
+        
+        edges.push(
+          <line
+            key={`edge-${i}-left`}
+            x1={x}
+            y1={y}
+            x2={childX}
+            y2={childY}
+            className="tree-edge"
+          />
+        );
+      }
+      
+      if (2 * i + 2 < sortedData.length) {
+        const childLevel = level + 1;
+        const childPos = 2 * (posInLevel) + 1.5;
+        const childTotal = Math.pow(2, childLevel);
+        const childX = (childPos) * (800 / childTotal);
+        const childY = childLevel * 80 + 50;
+        
+        edges.push(
+          <line
+            key={`edge-${i}-right`}
+            x1={x}
+            y1={y}
+            x2={childX}
+            y2={childY}
+            className="tree-edge"
+          />
+        );
+      }
+    }
     
-    return positions;
+    return [...edges, ...nodes];
   };
 
-  const nodes = buildBinaryTree();
-
   return (
-    <div className="tree-container">
-      <svg width="800" height="500" className="binary-tree-svg">
-        {/* Draw connections */}
-        {nodes.map(node => {
-          const leftChild = nodes.find(n => n.id === data[node.leftChildIndex]?.id);
-          const rightChild = nodes.find(n => n.id === data[node.rightChildIndex]?.id);
-          
-          return (
-            <g key={`connections-${node.id}`}>
-              {leftChild && (
-                <line
-                  x1={node.x}
-                  y1={node.y}
-                  x2={leftChild.x}
-                  y2={leftChild.y}
-                  className="tree-edge"
-                  strokeWidth="2"
-                />
-              )}
-              {rightChild && (
-                <line
-                  x1={node.x}
-                  y1={node.y}
-                  x2={rightChild.x}
-                  y2={rightChild.y}
-                  className="tree-edge"
-                  strokeWidth="2"
-                />
-              )}
-            </g>
-          );
-        })}
-        
-        {/* Draw nodes */}
-        {nodes.map(node => (
-          <g key={node.id} className="tree-node">
-            <circle
-              cx={node.x}
-              cy={node.y}
-              r={25}
-              className="binary-node"
-            />
-            <text
-              x={node.x}
-              y={node.y}
-              textAnchor="middle"
-              dy=".3em"
-              className="node-value"
-            >
-              {node.value}
-            </text>
-          </g>
-        ))}
-      </svg>
+    <div className="algorithm-container binary-tree">
+      <div className="algorithm-header">
+        <h3>Binary Tree</h3>
+        <div className="algorithm-stats">
+          <span className="stat">Nodes: {data.length}</span>
+          <span className="stat">Height: {levels}</span>
+          <span className="stat">Max Children: 2</span>
+        </div>
+      </div>
+      
+      <div className="tree-visualization">
+        <svg width="100%" height="350" className="tree-svg">
+          {buildTreeNodes()}
+        </svg>
+      </div>
     </div>
   );
 };

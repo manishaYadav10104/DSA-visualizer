@@ -1,215 +1,141 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import '../tree.css';
 
-class AVLNode {
-  constructor(value, id) {
-    this.value = value;
-    this.id = id;
-    this.height = 1;
-    this.left = null;
-    this.right = null;
+const AVLTree = ({ data = [] }) => {
+  if (data.length === 0) {
+    return (
+      <div className="algorithm-container avl">
+        <div className="algorithm-header">
+          <h3>AVL Tree</h3>
+          <div className="algorithm-stats">
+            <span className="stat">Nodes: 0</span>
+            <span className="stat">Height: 0</span>
+            <span className="stat">Balance: 0</span>
+          </div>
+        </div>
+        <div className="visualization-placeholder">
+          <p>No nodes to display</p>
+        </div>
+      </div>
+    );
   }
-}
 
-const AVLTree = ({ data }) => {
-  const [positions, setPositions] = useState([]);
-
-  const getHeight = (node) => node ? node.height : 0;
+  const sortedData = [...data].sort((a, b) => a.value - b.value);
   
-  const getBalance = (node) => node ? getHeight(node.left) - getHeight(node.right) : 0;
-
-  const buildAVLTree = () => {
-    if (!data || data.length === 0) return null;
+  const buildAVL = (arr, start, end, level = 0, xPos = { index: 0 }) => {
+    if (start > end) return null;
     
-    let root = null;
+    const mid = Math.floor((start + end) / 2);
+    const balance = (mid % 3) - 1; // Simulated balance factor (-1, 0, 1)
     
-    data.forEach(nodeData => {
-      root = insertAVLNode(root, nodeData.value, nodeData.id);
-    });
+    const node = {
+      ...arr[mid],
+      level,
+      balance,
+      x: xPos.index++ * 60 + 100,
+      y: level * 80 + 50,
+      left: null,
+      right: null
+    };
     
-    return root;
-  };
-
-  const insertAVLNode = (node, value, id) => {
-    if (!node) return new AVLNode(value, id);
-
-    if (value < node.value) {
-      node.left = insertAVLNode(node.left, value, id);
-    } else if (value > node.value) {
-      node.right = insertAVLNode(node.right, value, id);
-    } else {
-      return node; // No duplicates
-    }
-
-    node.height = 1 + Math.max(getHeight(node.left), getHeight(node.right));
-    const balance = getBalance(node);
-
-    // Left Left
-    if (balance > 1 && value < node.left.value) {
-      return rotateRight(node);
-    }
+    node.left = buildAVL(arr, start, mid - 1, level + 1, xPos);
+    node.right = buildAVL(arr, mid + 1, end, level + 1, xPos);
     
-    // Right Right
-    if (balance < -1 && value > node.right.value) {
-      return rotateLeft(node);
-    }
-    
-    // Left Right
-    if (balance > 1 && value > node.left.value) {
-      node.left = rotateLeft(node.left);
-      return rotateRight(node);
-    }
-    
-    // Right Left
-    if (balance < -1 && value < node.right.value) {
-      node.right = rotateRight(node.right);
-      return rotateLeft(node);
-    }
-
     return node;
   };
 
-  const rotateRight = (y) => {
-    const x = y.left;
-    const T2 = x ? x.right : null;
-
-    if (x) x.right = y;
-    y.left = T2;
-
-    y.height = Math.max(getHeight(y.left), getHeight(y.right)) + 1;
-    if (x) x.height = Math.max(getHeight(x.left), getHeight(x.right)) + 1;
-
-    return x || y;
-  };
-
-  const rotateLeft = (x) => {
-    const y = x.right;
-    const T2 = y ? y.left : null;
-
-    if (y) y.left = x;
-    x.right = T2;
-
-    x.height = Math.max(getHeight(x.left), getHeight(x.right)) + 1;
-    if (y) y.height = Math.max(getHeight(y.left), getHeight(y.right)) + 1;
-
-    return y || x;
-  };
-
-  const calculatePositions = (node, x, y, level = 0, width = 200) => {
-    if (!node) return [];
+  const collectNodesAndEdges = (node, result = { nodes: [], edges: [] }) => {
+    if (!node) return result;
     
-    const nodePos = {
-      id: node.id,
-      value: node.value,
-      x,
-      y,
-      level,
-      height: node.height,
-      balance: getBalance(node),
-      left: node.left,
-      right: node.right
-    };
+    result.nodes.push(node);
     
-    const leftPositions = calculatePositions(
-      node.left,
-      x - width / (level + 2),
-      y + 80,
-      level + 1,
-      width / 1.5
-    );
-    
-    const rightPositions = calculatePositions(
-      node.right,
-      x + width / (level + 2),
-      y + 80,
-      level + 1,
-      width / 1.5
-    );
-    
-    return [nodePos, ...leftPositions, ...rightPositions];
-  };
-
-  useEffect(() => {
-    const root = buildAVLTree();
-    if (root) {
-      const pos = calculatePositions(root, 400, 50);
-      setPositions(pos);
-    } else {
-      setPositions([]);
+    if (node.left) {
+      result.edges.push({
+        id: `${node.id}-left`,
+        x1: node.x,
+        y1: node.y,
+        x2: node.left.x,
+        y2: node.left.y
+      });
+      collectNodesAndEdges(node.left, result);
     }
-  }, [data]);
-
-  const getBalanceClass = (balance) => {
-    if (balance > 1) return 'left-heavy';
-    if (balance < -1) return 'right-heavy';
-    if (balance > 0) return 'slightly-left';
-    if (balance < 0) return 'slightly-right';
-    return 'balanced';
+    
+    if (node.right) {
+      result.edges.push({
+        id: `${node.id}-right`,
+        x1: node.x,
+        y1: node.y,
+        x2: node.right.x,
+        y2: node.right.y
+      });
+      collectNodesAndEdges(node.right, result);
+    }
+    
+    return result;
   };
+
+  const xPos = { index: 0 };
+  const root = buildAVL(sortedData, 0, sortedData.length - 1, 0, xPos);
+  const { nodes, edges } = collectNodesAndEdges(root);
+  const height = Math.ceil(Math.log2(data.length + 1));
+  const balancedNodes = nodes.filter(n => Math.abs(n.balance) <= 1).length;
 
   return (
-    <div className="tree-container">
-      <svg width="800" height="500" className="avl-svg">
-        {/* Draw connections */}
-        {positions.map(node => {
-          const leftChild = positions.find(n => n.id === node.left?.id);
-          const rightChild = positions.find(n => n.id === node.right?.id);
-          
-          return (
-            <g key={`connections-${node.id}`}>
-              {leftChild && (
-                <line
-                  x1={node.x}
-                  y1={node.y}
-                  x2={leftChild.x}
-                  y2={leftChild.y}
-                  className="tree-edge"
-                  strokeWidth="2"
-                />
-              )}
-              {rightChild && (
-                <line
-                  x1={node.x}
-                  y1={node.y}
-                  x2={rightChild.x}
-                  y2={rightChild.y}
-                  className="tree-edge"
-                  strokeWidth="2"
-                />
-              )}
-            </g>
-          );
-        })}
-        
-        {/* Draw nodes */}
-        {positions.map(node => (
-          <g key={node.id} className="tree-node">
-            <circle
-              cx={node.x}
-              cy={node.y}
-              r={25}
-              className={`avl-node ${getBalanceClass(node.balance)}`}
+    <div className="algorithm-container avl">
+      <div className="algorithm-header">
+        <h3>AVL Tree</h3>
+        <div className="algorithm-stats">
+          <span className="stat">Nodes: {data.length}</span>
+          <span className="stat">Height: {height}</span>
+          <span className="stat">Balanced: {balancedNodes}</span>
+        </div>
+      </div>
+      
+      <div className="tree-visualization">
+        <svg width="100%" height="350" className="tree-svg">
+          {/* Draw edges */}
+          {edges.map(edge => (
+            <line
+              key={edge.id}
+              x1={edge.x1}
+              y1={edge.y1}
+              x2={edge.x2}
+              y2={edge.y2}
+              className="tree-edge"
             />
-            <text
-              x={node.x}
-              y={node.y}
-              textAnchor="middle"
-              dy=".3em"
-              className="node-value"
-            >
-              {node.value}
-            </text>
-            <text
-              x={node.x}
-              y={node.y + 30}
-              textAnchor="middle"
-              className="balance-text"
-              fontSize="10"
-            >
-              h:{node.height}
-            </text>
-          </g>
-        ))}
-      </svg>
+          ))}
+          
+          {/* Draw nodes with balance status */}
+          {nodes.map(node => (
+            <g key={node.id}>
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r="20"
+                className={`tree-node avl-node ${Math.abs(node.balance) <= 1 ? 'balanced' : 'unbalanced'}`}
+              />
+              <text
+                x={node.x}
+                y={node.y}
+                textAnchor="middle"
+                dy=".3em"
+                className="node-value"
+              >
+                {node.value}
+              </text>
+              <text
+                x={node.x}
+                y={node.y + 15}
+                textAnchor="middle"
+                className="balance-text"
+                fontSize="10"
+              >
+                BF: {node.balance}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
     </div>
   );
 };

@@ -1,154 +1,128 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import '../tree.css';
 
-class BSTNode {
-  constructor(value, id) {
-    this.value = value;
-    this.id = id;
-    this.left = null;
-    this.right = null;
+const BinarySearchTree = ({ data = [] }) => {
+  if (data.length === 0) {
+    return (
+      <div className="algorithm-container bst">
+        <div className="algorithm-header">
+          <h3>Binary Search Tree</h3>
+          <div className="algorithm-stats">
+            <span className="stat">Nodes: 0</span>
+            <span className="stat">Height: 0</span>
+          </div>
+        </div>
+        <div className="visualization-placeholder">
+          <p>No nodes to display</p>
+        </div>
+      </div>
+    );
   }
-}
 
-const BinarySearchTree = ({ data }) => {
-  const [positions, setPositions] = useState([]);
-
-  const buildBST = () => {
-    if (!data || data.length === 0) return null;
+  // Build BST structure from sorted array
+  const sortedData = [...data].sort((a, b) => a.value - b.value);
+  
+  const buildBST = (arr, start, end, level = 0, xPos = { index: 0 }) => {
+    if (start > end) return null;
     
-    let root = null;
-    
-    data.forEach(nodeData => {
-      root = insertBSTNode(root, nodeData.value, nodeData.id);
-    });
-    
-    return root;
-  };
-
-  const insertBSTNode = (root, value, id) => {
-    const newNode = new BSTNode(value, id);
-    
-    if (!root) return newNode;
-    
-    let current = root;
-    let parent = null;
-    
-    while (current) {
-      parent = current;
-      if (value < current.value) {
-        if (!current.left) {
-          current.left = newNode;
-          break;
-        }
-        current = current.left;
-      } else {
-        if (!current.right) {
-          current.right = newNode;
-          break;
-        }
-        current = current.right;
-      }
-    }
-    
-    return root;
-  };
-
-  const calculatePositions = (node, x, y, level = 0, width = 200) => {
-    if (!node) return [];
-    
-    const nodePos = {
-      id: node.id,
-      value: node.value,
-      x,
-      y,
+    const mid = Math.floor((start + end) / 2);
+    const node = {
+      ...arr[mid],
       level,
-      left: node.left,
-      right: node.right
+      x: xPos.index++ * 60 + 100,
+      y: level * 80 + 50,
+      left: null,
+      right: null
     };
     
-    const leftPositions = calculatePositions(
-      node.left,
-      x - width / (level + 2),
-      y + 80,
-      level + 1,
-      width / 1.5
-    );
+    node.left = buildBST(arr, start, mid - 1, level + 1, xPos);
+    node.right = buildBST(arr, mid + 1, end, level + 1, xPos);
     
-    const rightPositions = calculatePositions(
-      node.right,
-      x + width / (level + 2),
-      y + 80,
-      level + 1,
-      width / 1.5
-    );
-    
-    return [nodePos, ...leftPositions, ...rightPositions];
+    return node;
   };
 
-  useEffect(() => {
-    const root = buildBST();
-    if (root) {
-      const pos = calculatePositions(root, 400, 50);
-      setPositions(pos);
-    } else {
-      setPositions([]);
+  const collectNodesAndEdges = (node, result = { nodes: [], edges: [] }) => {
+    if (!node) return result;
+    
+    result.nodes.push(node);
+    
+    if (node.left) {
+      result.edges.push({
+        id: `${node.id}-left`,
+        x1: node.x,
+        y1: node.y,
+        x2: node.left.x,
+        y2: node.left.y
+      });
+      collectNodesAndEdges(node.left, result);
     }
-  }, [data]);
+    
+    if (node.right) {
+      result.edges.push({
+        id: `${node.id}-right`,
+        x1: node.x,
+        y1: node.y,
+        x2: node.right.x,
+        y2: node.right.y
+      });
+      collectNodesAndEdges(node.right, result);
+    }
+    
+    return result;
+  };
+
+  const xPos = { index: 0 };
+  const root = buildBST(sortedData, 0, sortedData.length - 1, 0, xPos);
+  const { nodes, edges } = collectNodesAndEdges(root);
+  const height = Math.ceil(Math.log2(data.length + 1));
 
   return (
-    <div className="tree-container">
-      <svg width="800" height="500" className="bst-svg">
-        {/* Draw connections */}
-        {positions.map(node => {
-          const leftChild = positions.find(n => n.id === node.left?.id);
-          const rightChild = positions.find(n => n.id === node.right?.id);
-          
-          return (
-            <g key={`connections-${node.id}`}>
-              {leftChild && (
-                <line
-                  x1={node.x}
-                  y1={node.y}
-                  x2={leftChild.x}
-                  y2={leftChild.y}
-                  className="tree-edge"
-                  strokeWidth="2"
-                />
-              )}
-              {rightChild && (
-                <line
-                  x1={node.x}
-                  y1={node.y}
-                  x2={rightChild.x}
-                  y2={rightChild.y}
-                  className="tree-edge"
-                  strokeWidth="2"
-                />
-              )}
-            </g>
-          );
-        })}
-        
-        {/* Draw nodes */}
-        {positions.map(node => (
-          <g key={node.id} className="tree-node">
-            <circle
-              cx={node.x}
-              cy={node.y}
-              r={25}
-              className="bst-node"
+    <div className="algorithm-container bst">
+      <div className="algorithm-header">
+        <h3>Binary Search Tree</h3>
+        <div className="algorithm-stats">
+          <span className="stat">Nodes: {data.length}</span>
+          <span className="stat">Height: {height}</span>
+          <span className="stat">Ordered: Yes</span>
+        </div>
+      </div>
+      
+      <div className="tree-visualization">
+        <svg width="100%" height="350" className="tree-svg">
+          {/* Draw edges first */}
+          {edges.map(edge => (
+            <line
+              key={edge.id}
+              x1={edge.x1}
+              y1={edge.y1}
+              x2={edge.x2}
+              y2={edge.y2}
+              className="tree-edge"
             />
-            <text
-              x={node.x}
-              y={node.y}
-              textAnchor="middle"
-              dy=".3em"
-              className="node-value"
-            >
-              {node.value}
-            </text>
-          </g>
-        ))}
-      </svg>
+          ))}
+          
+          {/* Draw nodes */}
+          {nodes.map(node => (
+            <g key={node.id}>
+              <circle
+                cx={node.x}
+                cy={node.y}
+                r="20"
+                className="tree-node bst-node"
+              />
+              <text
+                x={node.x}
+                y={node.y}
+                textAnchor="middle"
+                dy=".3em"
+                className="node-value"
+              >
+                {node.value}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
     </div>
   );
 };
