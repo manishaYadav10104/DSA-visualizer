@@ -10,7 +10,7 @@ const Footer = ({ setSelectedFeature }) => {
       setSelectedFeature(feature);
     }
   };
-
+// this is footer
   return (
     <footer className="footer">
       <div className="footer-container">
